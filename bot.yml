@@ -1,0 +1,20 @@
+name: TEDxBOT
+description: A simple Go bot sample for Beep Boop
+avatar: resources/avatar.jpg
+config:
+  - name: STORMPATH_ID
+    friendly_name: This is the id
+    info: This is an unnecessary option
+    default: abc
+    global: true
+  - name: STORMPATH_SECRET
+    friendly_name: Shhhh
+    info: This is an secret option
+    type: secret
+    default: 123
+    global: true
+  - name: STORMPATH_APPID
+    friendly_name: appid
+    info: This is the app id
+    default: abcd
+    global: true
