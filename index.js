@@ -22,7 +22,7 @@ if(!apiKey.id || !apiKey.secret) {
 	console.warn('Stormpath API key and secret are required');
 	process.exit();
 }
-
+//test
 var client = new stormpath.Client({ apiKey: apiKey });
 
 var application = null;
