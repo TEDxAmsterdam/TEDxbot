@@ -48,7 +48,7 @@
 			console.log('Client has connected to the server!');
 			socket.on('message', function(data) {
 				console.log(data);
-				$('#chat').delay(3000).queue(function(n) {
+				$('#chat').delay(1500).queue(function(n) {
 				  $(this).text(data.user + ': ' + data.text);
 					n();
 				});

@@ -1,6 +1,8 @@
 // TEDxBOT
-// version 0.1
+// version 0.2
 // by dligthart <dligthart@gmail.com>
+
+var config = require('./config');
 
 /** Botkit **/
 var Botkit = require('botkit');
@@ -10,10 +12,10 @@ var controller = require(__dirname + '/WebSocketBot.js')({debug:true});
 var stormpath = require('stormpath');
 
 var apiKey = {
-	id: process.env.STORMPATH_ID,
-	secret: process.env.STORMPATH_SECRET
+	id: config.stormpath.id,
+	secret: config.stormpath.secret
 };
-var appId = process.env.STORMPATH_APPID;
+var appId = config.stormpath.appId;
 
 if(!apiKey.id || !apiKey.secret) {
 	console.warn('Stormpath API key and secret are required');
@@ -31,7 +33,7 @@ client.getApplication('https://api.stormpath.com/v1/applications/' + appId, func
 
 var bot = controller.spawn({});
 
-controller.setupWebserver(process.env.PORT || 80, bot, function(err, webserver) {
+controller.setupWebserver(config.port, bot, function(err, webserver) {
 	console.log('started ws');
 });
 
@@ -54,7 +56,7 @@ function startRegistrationConversation(bot, message) {
 	bot.startConversation(message, function(err, convo) {
     convo.say('Hello! Human!');
 		convo.ask('Would you like to register? ', function(response, convo) {
-			if('yes' == response.text) {
+			if('yes' == response.text.toLowerCase()) {
 				convo.next();
 				inputName(response, convo, configAccount);
 			}
@@ -62,25 +64,29 @@ function startRegistrationConversation(bot, message) {
   });
 }
 
-function createAccount(account, convo) {
-	application.createAccount(account, function(err, createdAccount) {
+function createAccount(convo, account) {
+	application.createAccount(account(), function(err, createdAccount) {
 		if(err) {
-
-			// TODO: add the correct error handling.
-
-			/**
-				]	name: 'ResourceError',
-[	2016-06-17T13:40:13Z	]	status: 409,
-[	2016-06-17T13:40:13Z	]	code: 2001,
-[	2016-06-17T13:40:13Z	]	userMessage: 'Account with that email already exists. Please choose another email.',
-[	2016-06-17T13:40:13Z	]
-**/
 			console.log(err);
+
 			convo.say('Something went wrong during registration..');
 			convo.next();
+
+			// 2001: account exists.
+			if(err.userMessage) {
+		  	convo.say(err.userMessage);
+				convo.next();
+
+				switch(err.code) {
+					case 2001:
+						inputEmail(null, convo, account);
+					break;
+				}
+			}
+
 		} else {
 		  console.log(createdAccount);
-			convo.say('Ok then - you are now registered!');
+			convo.say('Splendid! You have been registered!');
 			convo.next();
 			convo.say('One more thing; you can use this password to log in: ' + account.password);
 			convo.next();
@@ -92,12 +98,12 @@ function createAccount(account, convo) {
 }
 
 function inputName(response, convo, account) {
-	convo.ask('Pleased to get acquainted, meatbag - now what is your designation?', function(response, convo) {
-		account().givenName = response.text;
+	convo.ask('I\'m delighted to make your acquaintance, Human, may I ask what is your designation?', function(response, convo) {
+		account().givenName = capitalizeFirstLetter(response.text);
 		convo.say('I am here to serve you, Master ' + account().givenName +' !');
 		convo.next();
 		convo.ask('Master '+ account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
-			account().surname = response.text;
+			account().surname = capitalizeFirstLetter(response.text);
 			convo.say(account().givenName +  ' ' + account().surname + ', Master, what a beautiful name, splendid! I have stored your full name in my memory banks..');
 			convo.next();
 			inputEmail(response, convo, account);
@@ -107,16 +113,16 @@ function inputName(response, convo, account) {
 
 function inputEmail(response, convo, account) {
 	convo.ask('Now please enter your email address so I can send you lots of spam - wink wink ;)', function(response, convo) {
-		account().email = extractEmail(response.text);
+		account().email = extractEmail(response.text.toLowerCase());
 		convo.say('Thanks you entered: ' + account().email);
 		convo.next();
-		convo.ask(account().givenName + ', did you enter the correct email address?', function(response, convo) {
+		convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', function(response, convo) {
 			if('yes' == response.text) {
 				account().username = account().email;
 				account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
-				createAccount(account(), convo);
+				createAccount(convo, account);
 			} else {
-				convo.say('Ok let\'s go through it again..	');
+				convo.say('Ok let\'s go through it again...sigh..	');
 				convo.next();
 				inputEmail(response, convo, account);
 			}
@@ -135,4 +141,8 @@ function extractEmail(text){
 		return r[0];
 	}
 	return null;
+}
+
+function capitalizeFirstLetter(string) {
+    return string[0].toUpperCase() + string.slice(1);
 }
