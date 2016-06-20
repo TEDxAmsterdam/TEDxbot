@@ -1,0 +1,76 @@
+<html>
+
+<head>
+	<title>Tedxbot chat demo</title>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+	<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<style>
+		body {
+			padding: 50px;
+		}
+		.bottom-align-text {
+	    position: absolute;
+	    bottom: 0;
+	    right: 0;
+	  }
+	</style>
+</head>
+
+<body>
+
+	<div class="row">
+		<form>
+			<div class="row">
+				<div class="col-xs-4">
+					<img src="/images/tedxbot.png" alt="tedxbot" class="img-responsive centered" />
+				</div>
+			</div>
+
+			<div class="row">&nbsp;</div>
+			<div class="row">
+				<textarea id="chat" rows="4" cols="50" class="input-lg"></textarea>
+			</div>
+
+				<div class="row">&nbsp;</div>
+				<div class="row">
+					<input type="text" class="input-lg" id="chatinput" value="" />
+					<input id="submit" class="btn btn-primary btn-lg" type="submit" />
+				</div>
+		</form>
+	</div>
+
+	<script>
+		var socket = io.connect('http://localhost');
+
+		socket.on('connect', function() {
+			console.log('Client has connected to the server!');
+			socket.on('message', function(data) {
+				console.log(data);
+				$('#chat').delay(3000).queue(function(n) {
+				  $(this).text(data.user + ': ' + data.text);
+					n();
+				});
+			});
+		});
+
+		socket.on('disconnect', function() {
+			console.log('The client has disconnected!');
+		});
+
+		$(function() {
+			$('#submit').on('click', function() {
+				console.log('sending: ' + $('#chatinput').val());
+				socket.emit('message', {
+					user: 'Dave',
+					channel: 'ABC',
+					text: $('#chatinput').val()
+				});
+			})
+		});
+	</script>
+
+</body>
+
+</html>

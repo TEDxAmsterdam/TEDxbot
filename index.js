@@ -2,15 +2,12 @@
 // version 0.1
 // by dligthart <dligthart@gmail.com>
 
-var app = require('express')();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
-
+/** Botkit **/
 var Botkit = require('botkit');
+var controller = require(__dirname + '/WebSocketBot.js')({debug:true});
+
+/** Stormpath **/
 var stormpath = require('stormpath');
-var slackToken = process.env.SLACK_TOKEN;
-var token =  slackToken;
-var controller = Botkit.slackbot({ debug: false });
 
 var apiKey = {
 	id: process.env.STORMPATH_ID,
@@ -22,18 +19,20 @@ if(!apiKey.id || !apiKey.secret) {
 	console.warn('Stormpath API key and secret are required');
 	process.exit();
 }
-//test
+
 var client = new stormpath.Client({ apiKey: apiKey });
 
 var application = null;
+
 client.getApplication('https://api.stormpath.com/v1/applications/' + appId, function(err, resource) {
 	if(err) console.log('Could not retrieve stormpath application', appId);
 	application = resource;
 });
 
-controller.spawn({ token: token }).startRTM(function (err, bot, payload) {
-  if (err) throw new Error('Error connecting to Slack: ', err);
-  console.log('Connected to Slack');
+var bot = controller.spawn({});
+
+controller.setupWebserver(process.env.PORT || 80, bot, function(err, webserver) {
+	console.log('started ws');
 });
 
 controller.hears(['hi'], ['direct_message', 'direct_mention'], function (bot, message) {
@@ -137,12 +136,3 @@ function extractEmail(text){
 	}
 	return null;
 }
-
-server.listen(80);
-
-io.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
-    console.log(data);
-  });
-});
