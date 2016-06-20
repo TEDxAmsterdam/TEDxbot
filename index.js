@@ -59,7 +59,7 @@ function startRegistrationConversation(bot, message) {
     }
 
     bot.startConversation(message, function(err, convo) {
-        convo.sayFirst('Hello! Human!');
+        convo.sayFirst('What a lovely day!');
         convo.ask('Would you like to register? ', [{
 						pattern: bot.utterances.yes,
 						callback: function(response, convo) {
