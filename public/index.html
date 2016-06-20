@@ -49,7 +49,7 @@
 			socket.on('message', function(data) {
 				console.log(data);
 				$('#chat').delay(1500).queue(function(n) {
-				  $(this).text(data.user + ': ' + data.text);
+				  $(this).append(data.user + ': ' + data.text + "\n");
 					n();
 				});
 			});
@@ -62,10 +62,15 @@
 		$(function() {
 			$('#submit').on('click', function() {
 				console.log('sending: ' + $('#chatinput').val());
-				socket.emit('message', {
+				var data = {
 					user: 'Dave',
 					channel: 'ABC',
 					text: $('#chatinput').val()
+				};
+				socket.emit('message', data);
+				$('#chat').delay(0).queue(function(n) {
+				  $(this).append(data.user + ': ' + data.text + "\n");
+					n();
 				});
 			})
 		});

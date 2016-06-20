@@ -97,10 +97,10 @@ function WebSocketBot(configuration) {
         io.on('connection', function(socket, err) {
             console.log('Yes, I am listening..');
 
-            socket.emit('message', {
+          /*  socket.emit('message', {
 								user: 'tedxbot',
                 text: '...'
-            });
+            });*/
 
             socket.on('message', function(message) {
                 console.log(message);
