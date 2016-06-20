@@ -41,7 +41,7 @@ controller.setupWebserver(config.port, bot, function(err, webserver) {
     console.log('started ws');
 });
 
-controller.hears(['hi'], ['direct_message', 'direct_mention'], function(bot, message) {
+controller.hears(['.*'], ['direct_message', 'direct_mention'], function(bot, message) {
     startRegistrationConversation(bot, message);
 });
 
