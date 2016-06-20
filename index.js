@@ -45,6 +45,15 @@ controller.hears(['hi'], ['direct_message', 'direct_mention'], function(bot, mes
     startRegistrationConversation(bot, message);
 });
 
+controller.hears(['help', 'h', 'what now?'], ['direct_message', 'direct_mention'], function(bot, message) {
+    startHelp(bot, message);
+});
+
+function startHelp(bot, message) {
+	// TODO:
+	// stop, start, proceed, quit, ask me anything
+}
+
 function startRegistrationConversation(bot, message) {
     var account = {
         givenName: '',
@@ -111,7 +120,7 @@ function createAccount(convo, account) {
 }
 
 function inputName(response, convo, account, bot) {
-    convo.ask('I\'m delighted to make your acquaintance, Human, may I ask what is your designation?', function(response, convo) {
+    convo.ask('I\'m delighted to make your acquaintance, Human, may I ask what is your first name?', function(response, convo) {
         account().givenName = capitalizeFirstLetter(response.text);
         convo.say('I am here to serve you, Master ' + account().givenName + ' !');
         convo.next();
@@ -129,7 +138,8 @@ function inputEmail(response, convo, account, bot) {
         account().email = extractEmail(response.text.toLowerCase());
         convo.say('Thanks you entered: ' + account().email);
         convo.next();
-        convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', [{
+				//TODO remove this make it shorter.
+				convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', [{
             pattern: bot.utterances.yes,
             callback: function(response, convo) {
 								account().username = account().email;
@@ -144,6 +154,10 @@ function inputEmail(response, convo, account, bot) {
             }
         }]);
     });
+}
+
+function loginWithLinkedIn() {
+//TODO: implement
 }
 
 function makePassword(n, a) {
