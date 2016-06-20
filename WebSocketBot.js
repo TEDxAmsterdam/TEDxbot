@@ -1,3 +1,5 @@
+// WebsocketBot v1.0
+// by dligthart <dligthart@gmail.com>
 var Botkit = require(__dirname + '/node_modules/botkit/lib/CoreBot.js');
 var async = require('async');
 var express = require('express');
