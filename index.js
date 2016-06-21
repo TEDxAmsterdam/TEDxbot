@@ -41,12 +41,49 @@ controller.setupWebserver(config.port, bot, function(err, webserver) {
     console.log('started ws');
 });
 
-controller.hears(['.*'], ['direct_message', 'direct_mention'], function(bot, message) {
-    startRegistrationConversation(bot, message);
+controller.hears('help', ['direct_message', 'direct_mention'], function (bot, message) {
+  var help = 'I will respond to the following messages: \n' +
+      '`say Hi ` to start a conversation with me.\n' +
+      '`say help` to see this again.'
+  bot.reply(message, help)
 });
 
-controller.hears(['help', 'h', 'what now?'], ['direct_message', 'direct_mention'], function(bot, message) {
-    startHelp(bot, message);
+controller.hears(['attachment'], ['direct_message', 'direct_mention'], function (bot, message) {
+  var text = 'This is a test for an attachment'
+  var attachments = [{
+    fallback: text,
+    pretext: 'We bring bots to life. :sunglasses: :thumbsup:',
+    title: 'Whoop whoop',
+    image_url: 'https://storage.googleapis.com/beepboophq/_assets/bot-1.22f6fb.png',
+    title_link: 'http://dev.tedx.amsterdam',
+    text: text,
+    color: '#7CD197'
+  }]
+
+  bot.reply(message, {
+    attachments: attachments
+  }, function (err, resp) {
+    console.log(err, resp)
+  })
+});
+
+controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_message', 'direct_mention'], function(bot, message) {
+	if(message.data && message.data.data.email) {
+		bot.reply(message, 'I\'m sorry, ' + message.data.data.firstname + ' I\'m afraid I can\'t do that.');
+	}
+	else {
+		startRegistrationConversation(bot, message);
+	}
+});
+
+controller.hears(['hi', 'hello', 'what\'s up', 'howdy', 'hallo', 'hoi', 'he', 'hai', 'dag'], ['direct_message', 'direct_mention'], function(bot, message) {
+		if(message.data && message.data.data.email) {
+			bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
+			bot.reply(message, 'You are logged in and ready for action!');
+		}
+    else {
+			startRegistrationConversation(bot, message);
+		}
 });
 
 function startHelp(bot, message) {
@@ -54,13 +91,56 @@ function startHelp(bot, message) {
 	// stop, start, proceed, quit, ask me anything
 }
 
+/**
+id,
+firstname,
+lastname,
+title,
+gender,
+email,
+address,
+zipcode,
+city,
+country,
+phonenumber,
+birthdate,
+language,
+organization,
+function,
+tag1,
+tag2,
+tag3,
+role,
+status,
+venue,
+by_who,
+twitter,
+ning_profile,
+What is your BIG question?,
+backend_tag,
+Attended in
+*/
+
+// Onboarding flow.
 function startRegistrationConversation(bot, message) {
     var account = {
-        givenName: '',
-        surname: '',
-        username: '',
-        email: '',
-        password: ''
+        givenName: '', 	// *
+        surname: '', 		// *
+        username: '',	 	// * - email
+        email: '',  		// *
+        password: '', 	// * - generated
+				gender: 'male|female',
+				organization: '', // ** reg flow
+				function: 'function', // ** reg flow
+				language: '',
+				birthdate: '',
+				address: '',
+				zipcode: '',
+				city: '', 			// *
+				country: '',
+				phone: '',
+				tags:'', // ** reg flow
+				reason: '', // ** reg flow
     };
 
     function configAccount() {
@@ -84,6 +164,11 @@ function startRegistrationConversation(bot, message) {
 						}
 				}]);
     });
+}
+
+// Event registration flow.
+function startEventRegistrationConversation() {
+	// input tags (interests).
 }
 
 function createAccount(convo, account) {
@@ -110,8 +195,9 @@ function createAccount(convo, account) {
             console.log(createdAccount);
             convo.say('Splendid! You have been registered!');
             convo.next();
-            convo.say('One more thing; you can use this password to log in: ' + account().password);
-            convo.next();
+						sendLogin(convo, account);
+          //  convo.say('One more thing; you can use this password to log in: ' + account().password);
+          //  convo.next();
             convo.say('Master, I bid you farewell. Thank you for activating my circuits. ');
             convo.next();
             convo.say('And please check your email - I have sent you a message..bye bye');
@@ -120,7 +206,7 @@ function createAccount(convo, account) {
 }
 
 function inputName(response, convo, account, bot) {
-    convo.ask('I\'m delighted to make your acquaintance, Human, may I ask what is your first name?', function(response, convo) {
+    convo.ask('I\'m delighted to make your acquaintance, may I ask what is your first name?', function(response, convo) {
         account().givenName = capitalizeFirstLetter(response.text);
         convo.say('I am here to serve you, Master ' + account().givenName + ' !');
         convo.next();
@@ -132,6 +218,24 @@ function inputName(response, convo, account, bot) {
         });
     });
 }
+
+// inputLocation() of cityname
+function inputLocation(response, convo, account, bot) {
+
+}
+
+// choice: (linkedin), email address (exchange for linkedin if choice is email addr)
+
+// verify email
+
+// login status change front-end
+
+// known account (email) -> enter password -> logged in -> check if registered for event ? -> yes -> loggedin -> redirect to homepage
+// known account (email) -> enter password -> logged in -> check if registered for event ? -> no -> [event register flow]
+// known account (email) -> enter password -> wrong password -> reset password -> check email
+
+// unknown account (email) ->
+// unknown account (email) ->
 
 function inputEmail(response, convo, account, bot) {
     convo.ask('Now please enter your email address so I can send you lots of spam - wink wink ;)', function(response, convo) {
@@ -156,8 +260,42 @@ function inputEmail(response, convo, account, bot) {
     });
 }
 
+function sendLogin(convo, account) {
+	var msg = {
+      attachment: {
+      	type: "login",
+        payload: {
+          username: account().username,
+					password: account().password
+        }
+      }
+  };
+  convo.say(JSON.stringify(msg));
+	convo.next();
+}
+
+function inputTags() {
+
+}
+
+function inputLanguage() {
+	// TODO: implment.
+}
+
+function inputBirthdate() {
+	//TODO: implement
+}
+
+function inputGender() {
+	//TODO: implement.
+}
+
+function inputOrg() {
+	//TODO: implement.
+}
+
 function loginWithLinkedIn() {
-//TODO: implement
+	//TODO: implement
 }
 
 function makePassword(n, a) {

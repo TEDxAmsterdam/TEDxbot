@@ -13,6 +13,9 @@ var session = require("express-session")({
     saveUninitialized: true
 });
 var sharedsession = require("express-socket.io-session");
+
+// TODO: keep track of active sockets in an object using channel as a key
+// this is not gonna work for multiple clients - only 1 socket currently.
 var activeSocket = null;
 
 function WebSocketBot(configuration) {
@@ -33,13 +36,12 @@ function WebSocketBot(configuration) {
 
         bot.send = function(message, cb) {
             botkit.debug('SEND ', message);
-          //  io.on('connection', function(socket, err) {
-                activeSocket.emit('message', {
-                    user: 'tedxbot',
-                    channel: message.channel,
-                    text: message.text
-                });
-            //});
+						
+            activeSocket.emit('message', {
+                user: 'tedxbot',
+                channel: message.channel,
+                text: message.text
+            });
         };
 
         bot.reply = function(src, resp, cb) {
