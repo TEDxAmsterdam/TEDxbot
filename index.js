@@ -368,7 +368,7 @@ function createAccount(convo, account) {
             convo.say('Splendid! You have been registered!');
             convo.next();
 						sendLogin(convo, account);
-						sendMail(account().email, 'Your credentials', account().username + '<br>' + account().password);
+						sendMail(account().email, 'Your login credentials', account().username + ' ' + account().password);
 						inputRegisterEvent(convo, account);
         }
     });
