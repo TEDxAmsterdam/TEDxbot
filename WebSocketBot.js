@@ -36,7 +36,7 @@ function WebSocketBot(configuration) {
 
         bot.send = function(message, cb) {
             botkit.debug('SEND ', message);
-						
+
             activeSocket.emit('message', {
                 user: 'tedxbot',
                 channel: message.channel,
@@ -82,7 +82,7 @@ function WebSocketBot(configuration) {
     });
 
     ws_botkit.on('tick', function() {
-        console.log('hello, my circuits are fine..');
+      //  console.log('hello, my circuits are fine..');
     });
 
     ws_botkit.setupWebserver = function(port, bot, cb) {

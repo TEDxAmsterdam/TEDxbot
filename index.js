@@ -3,15 +3,16 @@
 // by dligthart <dligthart@gmail.com>
 
 var config = require('./config');
-
-/** Botkit **/
 var Botkit = require('botkit');
 var controller = require(__dirname + '/WebSocketBot.js')({
     debug: true
 });
-
-/** Stormpath **/
+// https://github.com/stormpath/stormpath-sdk-node/blob/master/example.js
 var stormpath = require('stormpath');
+var request = require('request');
+var MapboxClient = require('mapbox');
+var sgHelper = require('sendgrid').mail;
+var sg = require('sendgrid').SendGrid(config.sendgrid.key);
 
 var apiKey = {
     id: config.stormpath.id,
@@ -76,7 +77,7 @@ controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_m
 	}
 });
 
-controller.hears(['hi', 'hello', 'what\'s up', 'howdy', 'hallo', 'hoi', 'he', 'hai', 'dag'], ['direct_message', 'direct_mention'], function(bot, message) {
+controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], ['direct_message', 'direct_mention'], function(bot, message) {
 		if(message.data && message.data.data.email) {
 			bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
 			bot.reply(message, 'You are logged in and ready for action!');
@@ -85,11 +86,6 @@ controller.hears(['hi', 'hello', 'what\'s up', 'howdy', 'hallo', 'hoi', 'he', 'h
 			startRegistrationConversation(bot, message);
 		}
 });
-
-function startHelp(bot, message) {
-	// TODO:
-	// stop, start, proceed, quit, ask me anything
-}
 
 /**
 id,
@@ -129,18 +125,21 @@ function startRegistrationConversation(bot, message) {
         username: '',	 	// * - email
         email: '',  		// *
         password: '', 	// * - generated
-				gender: 'male|female',
-				organization: '', // ** reg flow
-				function: 'function', // ** reg flow
-				language: '',
-				birthdate: '',
-				address: '',
-				zipcode: '',
-				city: '', 			// *
-				country: '',
-				phone: '',
-				tags:'', // ** reg flow
-				reason: '', // ** reg flow
+				customData: {
+					gender: 'male|female',
+					organization: '', // ** reg flow
+					function: 'function', // ** reg flow
+					language: '',
+					birthdate: '',
+					address: '',
+					zipcode: '',
+					city: '', 			// *
+					country: '',
+					phone: '',
+					tags:'', // ** reg flow
+					reason2016: '', // ** reg flow
+					event2016: '' // ** reg flow
+				}
     };
 
     function configAccount() {
@@ -159,49 +158,11 @@ function startRegistrationConversation(bot, message) {
 				}, {
 						pattern: bot.utterances.no,
 						callback: function(response, convo) {
-								convo.say('Perhaps later.');
+								convo.say('Perhaps you would like to login?');
 								convo.next();
+								inputEmailLogin(convo, configAccount);
 						}
 				}]);
-    });
-}
-
-// Event registration flow.
-function startEventRegistrationConversation() {
-	// input tags (interests).
-}
-
-function createAccount(convo, account) {
-    application.createAccount(account(), function(err, createdAccount) {
-        if (err) {
-            console.log(err);
-
-            convo.say('Something went wrong during registration..');
-            convo.next();
-
-            // 2001: account exists.
-            if (err.userMessage) {
-                convo.say(err.userMessage);
-                convo.next();
-
-                switch (err.code) {
-                    case 2001:
-                        inputEmail(null, convo, account);
-                        break;
-                }
-            }
-
-        } else {
-            console.log(createdAccount);
-            convo.say('Splendid! You have been registered!');
-            convo.next();
-						sendLogin(convo, account);
-          //  convo.say('One more thing; you can use this password to log in: ' + account().password);
-          //  convo.next();
-            convo.say('Master, I bid you farewell. Thank you for activating my circuits. ');
-            convo.next();
-            convo.say('And please check your email - I have sent you a message..bye bye');
-        }
     });
 }
 
@@ -214,14 +175,88 @@ function inputName(response, convo, account, bot) {
             account().surname = capitalizeFirstLetter(response.text);
             convo.say(account().givenName + ' ' + account().surname + ', Master, what a beautiful name, splendid! I have stored your full name in my memory banks..');
             convo.next();
-            inputEmail(response, convo, account, bot);
+						inputLocation(convo, account);
         });
     });
 }
 
-// inputLocation() of cityname
-function inputLocation(response, convo, account, bot) {
+function inputLocation(convo, account) {
+  convo.ask('What is your city of residence?', function(response, convo) {
+			account().customData.city = capitalizeFirstLetter(response.text);
+			var client = new MapboxClient('pk.eyJ1IjoidGVkeGFtc3RlcmRhbSIsImEiOiJjaXEzbzAzZHAwMDZ1aTJuZGw2bXJtNW45In0.YDB2RiF_pHlry694BJcQaw');
+			client.geocodeForward(account().customData.city, function(err, res) {
+					//console.log(err, res);
+					if(err) {
+						convo.say('Wow, this city is not listed in my database; it must be lovely there for sure!');
+						convo.next();
+						convo.ask('In which country do you reside?)', function(response, convo) {
+				        account().customData.country = response.text.toLowerCase()
+								convo.say(account().customData.country + ' sounds like a cool place to be');
+								convo.next();
+				    });
+					} else {
+						if(res.features.length == 0) {
+							convo.next();
+							inputLocation(convo, account);
+						}
+						else {
+							if(!res.features[0].context) {
+								convo.next();
+								inputLocation(convo, account);
+							}
+							else {
+								var tempCountry = res.features[0].context[parseInt(res.features[0].context.length - 1)].text;
+								console.log(res.features[0].context, res.features[0].context.length, tempCountry);
+								account().customData.country = tempCountry;
+								var reply = 'I love ' + account().customData.city + ' in ';
+								if(account().customData.country.endsWith('s')
+									|| account().customData.country.toLowerCase().indexOf('united') > -1
+									|| account().customData.country.toLowerCase().indexOf('union') > -1
+									|| account().customData.country.toLowerCase().indexOf('republic') > -1) {
+									reply += 'the ' + account().customData.country;
+								} else {
+									reply += account().customData.country;
+								}
+						  	convo.say(reply);
+								convo.next();
+								inputOrg(convo, account);
+							}
+						}
+					}
+			});
+	});
+}
 
+function inputOrg(convo, account) {
+	convo.ask('What is the name of your organization?', function(response, convo) {
+        account().customData.organization = response.text;
+				convo.next();
+				convo.ask('What is your function within the '+account().customData.organization+' organization?', function(response, convo) {
+				  account().customData.function = capitalizeFirstLetter(response.text);
+					convo.next();
+					inputGender(convo, account);
+				});
+  });
+}
+
+function inputGender(convo, account) {
+	convo.ask('Are you male? just asking...', [{
+			pattern: bot.utterances.yes,
+			callback: function(response, convo) {
+					account().customData.gender = 'male';
+					convo.say('Hello Sir! Great! I will continue...');
+					convo.next();
+					inputEmailRegistration(convo, account);
+			}
+	}, {
+			pattern: bot.utterances.no,
+			callback: function(response, convo) {
+					account().customData.gender = 'female';
+					convo.say('Hello Madam! Great! I will continue...');
+					convo.next();
+					inputEmailRegistration(convo, account);
+			}
+	}]);
 }
 
 // choice: (linkedin), email address (exchange for linkedin if choice is email addr)
@@ -237,27 +272,20 @@ function inputLocation(response, convo, account, bot) {
 // unknown account (email) ->
 // unknown account (email) ->
 
-function inputEmail(response, convo, account, bot) {
+function inputEmailRegistration(convo, account) {
     convo.ask('Now please enter your email address so I can send you lots of spam - wink wink ;)', function(response, convo) {
         account().email = extractEmail(response.text.toLowerCase());
         convo.say('Thanks you entered: ' + account().email);
-        convo.next();
-				//TODO remove this make it shorter.
-				convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', [{
-            pattern: bot.utterances.yes,
-            callback: function(response, convo) {
-								account().username = account().email;
-								account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
-								createAccount(convo, account);
-            }
-        }, {
-            pattern: bot.utterances.no,
-            callback: function(response, convo) {
-              	convo.say('Ok let\'s go through it again...sigh..	;)');
-								inputEmail(response, convo, account);
-            }
-        }]);
+				convo.say('I will check if this account is already present in our database now..')
+				validateAccount(convo, account, false);
     });
+}
+
+function inputEmailLogin(convo, account) {
+	convo.ask('Please enter your email address', function(response, convo) {
+			account().email = extractEmail(response.text.toLowerCase());
+			validateAccount(convo, account, true);
+	});
 }
 
 function sendLogin(convo, account) {
@@ -270,8 +298,127 @@ function sendLogin(convo, account) {
         }
       }
   };
+	console.log(msg);
   convo.say(JSON.stringify(msg));
 	convo.next();
+}
+
+function validateAccount(convo, account, inLoginFlow) {
+	application.getAccounts({ email: account().email }, function(err, accounts) {
+		if(err) {
+			convo.say('An error occurred during account validation');
+			convo.next();
+		}
+		if (accounts && parseInt(accounts.size) >= 1) {
+			convo.next();
+			convo.ask('Master, I have located your account in my memory banks. Please enter your password to login.', function(response, convo) {
+					account().username = account().email;
+					account().password = response.text;
+					inputRegisterEvent(convo, account);
+	    });
+    } else {
+			convo.say("It seems that this account does not exist");
+			convo.next();
+			//TODO remove this make it shorter.
+			convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', [{
+					pattern: bot.utterances.yes,
+					callback: function(response, convo) {
+							account().username = account().email;
+							account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
+							createAccount(convo, account);
+					}
+			}, {
+					pattern: bot.utterances.no,
+					callback: function(response, convo) {
+							convo.say('Ok let\'s go through it again...sigh..	;)');
+							convo.next();
+							if(inLoginFlow) {
+								inputEmailLogin(convo, account);
+							}
+							else {
+								inputEmailRegistration(convo, account);
+							}
+					}
+			}]);
+		}
+	});
+}
+
+function createAccount(convo, account) {
+    application.createAccount(account(), function(err, createdAccount) {
+        if (err) {
+            console.log(err);
+            convo.say('Something went wrong during registration..');
+            convo.next();
+
+            // 2001: account exists.
+            if (err.userMessage) {
+                convo.say(err.userMessage);
+                convo.next();
+
+                switch (err.code) {
+                    case 2001:
+                        inputEmailRegistration(convo, account);
+                        break;
+                }
+            }
+
+        } else {
+            console.log(createdAccount);
+            convo.say('Splendid! You have been registered!');
+            convo.next();
+						sendLogin(convo, account);
+						sendMail(account().email, 'Your credentials', account().username + '<br>' + account().password);
+						inputRegisterEvent(convo, account);
+        }
+    });
+}
+
+function inputRegisterEvent(convo, account) {
+	login(account().username, account().password, function(acc) {
+		if(!acc) {
+			validateAccount(convo, account, true);
+		} else {
+			//console.log('callback', acc);
+			convo.next();
+			convo.ask('Would you like to register for the event?', [{
+					pattern: bot.utterances.yes,
+					callback: function(response, convo) {
+							acc.customData.event2016 = 'yes';
+							convo.say('You are going ! :) ');
+							convo.next();
+							convo.ask('Can you tell me the reason why you want to go?', function(response, convo) {
+									acc.customData.reason2016 = response.text;
+									acc.save(function (err, acc) {
+										if(!err) {
+											convo.next();
+											convo.say('Splendid! Thank you for registering for the event and have a great day!');
+											convo.next();
+										} else {
+											convo.say('Something went wrong..');
+											convo.next();
+										}
+									});
+
+					    });
+					}
+			}, {
+					pattern: bot.utterances.no,
+					callback: function(response, convo) {
+							acc.customData.event2016 = 'no';
+							acc.save(function (err, acc) {
+								if(!err) {
+									convo.say('You are not going.. :( Maybe next time?');
+									convo.next();
+								} else {
+									convo.say('Something went wrong..');
+									convo.next();
+								}
+							});
+					}
+			}]);
+		}
+	});
 }
 
 function inputTags() {
@@ -286,16 +433,22 @@ function inputBirthdate() {
 	//TODO: implement
 }
 
-function inputGender() {
-	//TODO: implement.
-}
-
-function inputOrg() {
-	//TODO: implement.
-}
-
 function loginWithLinkedIn() {
 	//TODO: implement
+}
+
+function login(username, password, cb) {
+	application.authenticateAccount({username: username, password: password}, function (err, authRes) {
+		console.log(err, authRes);
+		if(!err) {
+			authRes.getAccount().expand({customData: true}).exec(function (err, acc) {
+				console.log(err, acc);
+				cb(acc);
+			});
+		} else {
+			cb(false);
+		}
+	});
 }
 
 function makePassword(n, a) {
@@ -313,4 +466,54 @@ function extractEmail(text) {
 
 function capitalizeFirstLetter(string) {
     return string[0].toUpperCase() + string.slice(1);
+}
+
+function getConceptsClassification(arr, callback) {
+		var text = arr.join("+");
+		//console.log(text);
+		var api = 'https://alchemy.p.mashape.com/text/TextGetRankedConcepts?linkedData=false&outputMode=json&text=' + text;
+		var options = {
+		  url: api,
+		  headers: {
+		    'X-Mashape-Key': '3wA8TeL1DGmshMHp9kga5a1ffV1pp1Ws8gXjsnH2sCubmBNyxd',
+				'Accept': 'application/json'
+		  }
+		};
+		request(options, function(error, response, body) {
+			if (!error && response.statusCode == 200) {
+				var result = JSON.parse(body);
+				//console.log(result);
+				callback({"concepts": result.concepts, "tags": arr});
+			}
+		});
+}
+
+function sendMail(toEmail, subject, body) {
+  var from_email = new sgHelper.Email("bot@tedx.amsterdam");
+  var to_email = new sgHelper.Email(toEmail);
+  var content = new sgHelper.Content("text/plain", body);
+  var mail = new sgHelper.Mail(from_email, subject, to_email, content);
+
+  var requestBody = mail.toJSON();
+  var request = sg.emptyRequest();
+  request.method = 'POST';
+  request.path = '/v3/mail/send';
+  request.body = requestBody;
+  sg.API(request, function (response) {
+    console.log(response.statusCode);
+    console.log(response.body);
+    console.log(response.headers);
+  });
+}
+
+if (!String.prototype.endsWith) {
+  String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.indexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+  };
 }
