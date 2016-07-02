@@ -147,11 +147,11 @@
 		}
 	}
 
-	var $content = $('#content');
-  var $inner = $('#inner');
 	function scrollBottom() {
-        $($inner).animate({ scrollTop: $($content).offset().top + $($content).outerHeight(true) }, {
-            queue: false,
-            duration: 'ease'
-        });
+			var $content = $('#content');
+		  var $inner = $('#inner');
+      $($inner).animate({ scrollTop: $($content).height() }, {
+          queue: true,
+          duration: 'ease'
+      });
     }
