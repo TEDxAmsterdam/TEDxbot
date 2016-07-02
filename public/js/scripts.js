@@ -1,5 +1,5 @@
 	/* http://tedxchatbot.herokuapp.com  */
-	var socket = io.connect('http://localhost');
+	var socket = io.connect('http://tedxchatbot.herokuapp.com');
 
 	socket.on('connect', function() {
 		console.log('Client has connected to the server!');
