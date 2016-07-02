@@ -1,4 +1,4 @@
-// WebsocketBot v1.0
+// WebsocketBot v1.1
 // by dligthart <dligthart@gmail.com>
 var Botkit = require(__dirname + '/node_modules/botkit/lib/CoreBot.js');
 var async = require('async');
@@ -14,9 +14,7 @@ var session = require("express-session")({
 });
 var sharedsession = require("express-socket.io-session");
 
-// TODO: keep track of active sockets in an object using channel as a key
-// this is not gonna work for multiple clients - only 1 socket currently.
-var activeSocket = null;
+var activeSockets = [];
 
 function WebSocketBot(configuration) {
 
@@ -35,13 +33,28 @@ function WebSocketBot(configuration) {
         };
 
         bot.send = function(message, cb) {
-            botkit.debug('SEND ', message);
+						if(message.channel) {
+							botkit.debug('bot.send: ', message);
 
-            activeSocket.emit('message', {
-                user: 'tedxbot',
-                channel: message.channel,
-                text: message.text
-            });
+							var activeSocket = {};
+							for(var i=0;i<activeSockets.length;i++) {
+								botkit.debug(activeSockets[i].id);
+								if(activeSockets[i].id.indexOf(message.channel) > -1){
+									activeSocket = activeSockets[i];
+								}
+							}
+							if(activeSocket.id) {
+		            activeSocket.emit('message', {
+		                user: 'tedxbot',
+		                channel: message.channel,
+		                text: message.text
+		            });
+							} else {
+								botkit.debug('No active socket found');
+							}
+						} else {
+							botkit.debug('bot.send: No channel id found');
+						}
         };
 
         bot.reply = function(src, resp, cb) {
@@ -97,12 +110,11 @@ function WebSocketBot(configuration) {
 
         server.listen(port ? port : 80);
         io.on('connection', function(socket, err) {
-            console.log('Yes, I am listening..');
 
-          /*  socket.emit('message', {
-								user: 'tedxbot',
-                text: '...'
-            });*/
+						var socketId = socket.id;
+  					var clientIp = socket.request.connection.remoteAddress;
+
+						console.log('Connection established', socketId, clientIp);
 
             socket.on('message', function(message) {
                 console.log(message);
@@ -110,7 +122,16 @@ function WebSocketBot(configuration) {
                 ws_botkit.receiveMessage(bot, message);
             });
 
-						activeSocket = socket;
+						activeSockets.push(socket);
+
+						socket.on('disconnect', function() {
+				      console.log('Got disconnect!', socket.id);
+				      var i = activeSockets.indexOf(socket);
+				      activeSockets.splice(i, 1);
+							for(var i=0;i<activeSockets.length;i++) {
+								console.log('Active connection:', activeSockets[i].id);
+							}
+				   });
         });
         ws_botkit.config.port = port;
         return ws_botkit;
