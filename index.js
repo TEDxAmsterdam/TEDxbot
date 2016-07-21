@@ -344,27 +344,31 @@ function validateAccount(convo, account, inLoginFlow) {
     } else {
 			convo.say("It seems that this account does not exist");
 			convo.next();
-			//TODO remove this make it shorter.
-			convo.ask('Master ' + account().givenName + ', did you enter the correct email address?', [{
-					pattern: bot.utterances.yes,
-					callback: function(response, convo) {
-							account().username = account().email;
-							account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
-							createAccount(convo, account);
-					}
-			}, {
-					pattern: bot.utterances.no,
-					callback: function(response, convo) {
-							convo.say('Ok let\'s go through it again...sigh..	;)');
-							convo.next();
-							if(inLoginFlow) {
-								inputEmailLogin(convo, account);
-							}
-							else {
-								inputEmailRegistration(convo, account);
-							}
-					}
-			}]);
+      decide(convo, JSON.stringify({
+          attachment: {
+            type: "decision",
+            payload: {
+              text: 'Master ' + account().givenName + ', did you enter the correct email address?',
+              yes: 'Yes',
+              no: 'No'
+            }
+          }
+      }),
+      function(r,c) {
+        account().username = account().email;
+        account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
+        createAccount(c, account);
+      },
+      function(r,c) {
+        c.say('Ok let\'s go through it again...sigh..	;)');
+        c.next();
+        if(inLoginFlow) {
+          inputEmailLogin(c, account);
+        }
+        else {
+          inputEmailRegistration(c, account);
+        }
+      });
 		}
 	});
 }
@@ -406,42 +410,45 @@ function inputRegisterEvent(convo, account) {
 		} else {
 			//console.log('callback', acc);
 			convo.next();
-			convo.ask('Would you like to register for the event?', [{
-					pattern: bot.utterances.yes,
-					callback: function(response, convo) {
-							acc.customData.event2016 = 'yes';
-							convo.say('You are going ! :) ');
-							convo.next();
-							convo.ask('Can you tell me the reason why you want to go?', function(response, convo) {
-									acc.customData.reason2016 = response.text;
-									acc.save(function (err, acc) {
-										if(!err) {
-											convo.next();
-											convo.say('Splendid! Thank you for registering for the event and have a great day!');
-											convo.next();
-										} else {
-											convo.say('Something went wrong..');
-											convo.next();
-										}
-									});
-
-					    });
-					}
-			}, {
-					pattern: bot.utterances.no,
-					callback: function(response, convo) {
-							acc.customData.event2016 = 'no';
-							acc.save(function (err, acc) {
-								if(!err) {
-									convo.say('You are not going.. :( Maybe next time?');
-									convo.next();
-								} else {
-									convo.say('Something went wrong..');
-									convo.next();
-								}
-							});
-					}
-			}]);
+      decide(convo,JSON.stringify({
+          attachment: {
+            type: "decision",
+            payload: {
+              text: 'Would you like to register for the event?',
+              yes: 'Yes',
+              no: 'No'
+            }
+          }
+      }),function(r,c) {
+        acc.customData.event2016 = 'yes';
+        c.say('You are going ! :) ');
+        c.next();
+        c.ask('Can you tell me the reason why you want to go?', function(r, c) {
+            acc.customData.reason2016 = response.text;
+            acc.save(function (err, acc) {
+              if(!err) {
+                c.next();
+                c.say('Splendid! Thank you for registering for the event and have a great day!');
+                c.next();
+              } else {
+                c.say('Something went wrong..');
+                c.next();
+              }
+            });
+        });
+      },
+      function(r,c) {
+        acc.customData.event2016 = 'no';
+        acc.save(function (err, acc) {
+          if(!err) {
+            c.say('You are not going.. :( Maybe next time?');
+            c.next();
+          } else {
+            c.say('Something went wrong..');
+            c.next();
+          }
+        });
+      });
 		}
 	});
 }

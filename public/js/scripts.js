@@ -76,7 +76,7 @@ function render() {
 			cache: true
 		}).done(function(user) {
 			store.dispatch(loggedInAction(user.data));
-			store.dispatch(messageReceivedAction('Master ' + user.data.firstname + ' you are now logged in !'));
+			//store.dispatch(messageReceivedAction('Master ' + user.data.firstname + ' you are now logged in !'));
 		}).fail(function(err) {
 			console.log(err);
 			store.dispatch(messageReceivedAction('Your password appears to be incorrect'));
