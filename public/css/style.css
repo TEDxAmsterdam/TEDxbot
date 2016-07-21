@@ -89,7 +89,7 @@ body {
 .nav .default-nav .main-nav .toggle {
   height: 32px;
   width: 32px;
-  background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/104946/ic_arrow_back_white_48dp.png);
+  #background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/104946/ic_arrow_back_white_48dp.png);
   background-size: contain;
   margin: 16px;
   float: left;
@@ -100,7 +100,7 @@ body {
 .nav .default-nav .main-nav .options {
   height: 32px;
   width: 32px;
-  background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/104946/ic_more_vert_white_48dp.png);
+  #background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/104946/ic_more_vert_white_48dp.png);
   background-size: contain;
   margin: 16px;
   position: absolute;
