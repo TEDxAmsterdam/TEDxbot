@@ -259,7 +259,7 @@ function inputOrg(convo, account) {
 }
 
 function inputGender(convo, account) {
-  decision(convo,
+  decide(convo,
     JSON.stringify({
       attachment: {
         type: "decision",
