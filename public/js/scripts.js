@@ -18,9 +18,9 @@ function userReducer(state, action) {
   }
 	switch(action.type) {
 		case 'LOGGEDIN':
-			return {user: action.user};
+			return action.user;
 		default:
-			return {user: null};
+			return null;
 	}
 }
 function attachmentReducer(state, action) {
@@ -56,7 +56,7 @@ function render() {
 	console.log('state', state);
 
 	// Print message from bot.
-	if(state.message.body) {
+	if(state.message.body && state.message.body != null) {
 		var avatar = '/images/avatar.png';
 		$('#content').delay(textDelay).queue(function(n) {
 			var indicator = $('<div class="message-wrapper them"> <div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn"><img class="indicator" src="/images/chatindicator-white.gif"/></div></div>');
@@ -70,24 +70,28 @@ function render() {
 		});
 	}
 
+  if(state.user && state.user.firstname) {
+    //store.dispatch(messageReceivedAction(state.user.firstname + ', you are logged in..'));
+  }
+
 	// Login user.
 	if(state.attachment.login) {
 		User.signin(state.attachment.login.username, state.attachment.login.password, {
 			cache: true
 		}).done(function(user) {
-			store.dispatch(loggedInAction(user.data));
-			//store.dispatch(messageReceivedAction('Master ' + user.data.firstname + ' you are now logged in !'));
+		//	store.dispatch(loggedInAction(user.data));
 		}).fail(function(err) {
 			console.log(err);
-			store.dispatch(messageReceivedAction('Your password appears to be incorrect'));
+			//store.dispatch(messageReceivedAction('Your password appears to be incorrect'));
 		});
 	}
 
 	// Decision.
 	if(state.attachment.decision) {
-		store.dispatch(messageReceivedAction(state.attachment.decision.text));
 		$('#chat-input').hide();
-		$('#decide').delay(1000).show();
+		$('#decide').show();
+    $('#btn-yes').focus();
+    store.dispatch(messageReceivedAction(state.attachment.decision.text));
 	}
 }
 

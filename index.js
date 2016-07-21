@@ -79,8 +79,8 @@ controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_m
 
 controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], ['direct_message', 'direct_mention'], function(bot, message) {
 		if(message.data && message.data.data.email) {
+      console.log('MESSAGE', message);
 			bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
-			bot.reply(message, 'You are logged in and ready for action!');
 		}
     else {
 			startRegistrationConversation(bot, message);
@@ -161,12 +161,12 @@ function startRegistrationConversation(bot, message) {
         decide(convo, JSON.stringify(msg), function(r,c){
             c.say('Great! I will continue...');
             c.next();
-          	inputName(r, c, configAccount, bot);
+            inputName(convo, configAccount);
         },
         function(r,c) {
           c.say('Perhaps you would like to login?');
           c.next();
-          inputEmailLogin(convo, configAccount);
+          inputEmailLogin(c, configAccount);
         });
     });
 }
@@ -185,17 +185,23 @@ function decide(convo, question, yesCb, noCb) {
   }]);
 }
 
-function inputName(response, convo, account, bot) {
+function inputName(convo, account) {
     convo.ask('I\'m delighted to make your acquaintance, may I ask what is your first name?', function(response, convo) {
-        account().givenName = capitalizeFirstLetter(response.text);
-        convo.say('I am here to serve you, Master ' + account().givenName + ' !');
-        convo.next();
-        convo.ask('Master ' + account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
-            account().surname = capitalizeFirstLetter(response.text);
-            convo.say(account().givenName + ' ' + account().surname + ', Master, what a beautiful name, splendid! I have stored your full name in my memory banks..');
-            convo.next();
-						inputLocation(convo, account);
-        });
+        if(!response.text) {
+          convo.next();
+          inputName(convo, account);
+        } else {
+          account().givenName = capitalizeFirstLetter(response.text);
+          convo.say('I am here to serve you, Master ' + account().givenName + ' !');
+          convo.next();
+          convo.ask('Master ' + account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
+              account().surname = capitalizeFirstLetter(response.text);
+              convo.say(account().givenName + ' ' + account().surname + ', Master, what a beautiful name, splendid! I have stored your full name in my memory banks..');
+              convo.next();
+              inputEmailRegistration(convo, account);
+          });
+        }
+
     });
 }
 
@@ -274,13 +280,11 @@ function inputGender(convo, account) {
     account().customData.gender = 'male';
     c.say('Hello Sir! Great! I will continue...');
     c.next();
-    inputEmailRegistration(c, account);
   },
   function(r,c) {
     account().customData.gender = 'female';
     c.say('Hello Madam! Great! I will continue...');
     c.next();
-    inputEmailRegistration(c, account);
   });
 }
 
@@ -298,7 +302,7 @@ function inputGender(convo, account) {
 // unknown account (email) ->
 
 function inputEmailRegistration(convo, account) {
-    convo.ask('Now please enter your email address so I can send you lots of spam - wink wink ;)', function(response, convo) {
+    convo.ask('Please enter your email address', function(response, convo) {
         account().email = extractEmail(response.text.toLowerCase());
         convo.say('Thanks you entered: ' + account().email);
 				convo.say('I will check if this account is already present in our database now..')
@@ -336,11 +340,27 @@ function validateAccount(convo, account, inLoginFlow) {
 		}
 		if (accounts && parseInt(accounts.size) >= 1) {
 			convo.next();
-			convo.ask('Master, I have located your account in my memory banks. Please enter your password to login.', function(response, convo) {
-					account().username = account().email;
-					account().password = response.text;
-					inputRegisterEvent(convo, account);
-	    });
+      decide(convo, JSON.stringify({
+          attachment: {
+            type: "decision",
+            payload: {
+              text: 'I have located your account in my memory banks. Would you like to login?',
+              yes: 'Yes login',
+              no: 'Re-enter email'
+            }
+          }
+      }), function(r,c) {
+        c.next();
+        c.ask('Please enter your password to login.', function(response, convo) {
+            account().username = account().email;
+  					account().password = response.text;
+  					inputRegisterEvent(c, account);
+  	    });
+      }, function(r,c){
+        c.next();
+        inputEmailRegistration(c, account);
+      });
+
     } else {
 			convo.say("It seems that this account does not exist");
 			convo.next();
@@ -398,7 +418,8 @@ function createAccount(convo, account) {
             convo.next();
 						sendLogin(convo, account);
 						sendMail(account().email, 'Your login credentials', account().username + ' ' + account().password);
-						inputRegisterEvent(convo, account);
+            convo.next();
+            inputRegisterEvent(convo, account);
         }
     });
 }
@@ -408,47 +429,60 @@ function inputRegisterEvent(convo, account) {
 		if(!acc) {
 			validateAccount(convo, account, true);
 		} else {
-			//console.log('callback', acc);
+			console.log('Account info', acc);
 			convo.next();
-      decide(convo,JSON.stringify({
-          attachment: {
-            type: "decision",
-            payload: {
-              text: 'Would you like to register for the event?',
-              yes: 'Yes',
-              no: 'No'
-            }
-          }
-      }),function(r,c) {
-        acc.customData.event2016 = 'yes';
-        c.say('You are going ! :) ');
-        c.next();
-        c.ask('Can you tell me the reason why you want to go?', function(r, c) {
-            acc.customData.reason2016 = response.text;
+      if('yes' == acc.customData.event2016) {
+          convo.say('I see you are already registered for the 2016 TedxAmsterdam event! You said the following:');
+          convo.next();
+          convo.say(acc.customData.reason2016);
+          convo.next();
+          convo.say('That is just awesome! See you soon!')
+          convo.next();
+
+      }
+      else if(!acc.customData.event2016){
+        decide(convo, JSON.stringify({
+              attachment: {
+                type: "decision",
+                payload: {
+                  text: 'Would you like to register for the event?',
+                  yes: 'Yes',
+                  no: 'No'
+                }
+              }
+          }),function(r,c) {
+            acc.customData.event2016 = 'yes';
+            c.next();
+            c.say('You are going ! :) ');
+            c.next();
+            c.ask('Can you tell me the reason why you want to go?', function(r, c) {
+                acc.customData.reason2016 = r.text;
+                acc.save(function (err, acc) {
+                  if(!err) {
+                    c.next();
+                    c.say('Splendid! Thank you for registering for the event and have a great day!');
+                    c.next();
+                  } else {
+                    c.say('Something went wrong..');
+                    c.next();
+                  }
+                });
+            });
+          },
+          function(r,c) {
+            acc.customData.event2016 = 'no';
             acc.save(function (err, acc) {
               if(!err) {
-                c.next();
-                c.say('Splendid! Thank you for registering for the event and have a great day!');
+                c.say('You are not going.. :( Maybe next time?');
                 c.next();
               } else {
                 c.say('Something went wrong..');
                 c.next();
               }
             });
-        });
-      },
-      function(r,c) {
-        acc.customData.event2016 = 'no';
-        acc.save(function (err, acc) {
-          if(!err) {
-            c.say('You are not going.. :( Maybe next time?');
-            c.next();
-          } else {
-            c.say('Something went wrong..');
-            c.next();
-          }
-        });
-      });
+          });
+
+      }
 		}
 	});
 }
