@@ -59,7 +59,8 @@ function render() {
 			var templ = $('<div class="message-wrapper ' + who + '"><div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn">' + state.message.body + '</div></div>');
 			var indicator = $('<img class="indicator" src="/images/chatindicator.gif"/>');
 			var parent = $(this);
-			indicator.appendTo($(this)).delay(getRandomInt(500,1000)).fadeOut('slow', function(){
+			$(this).remove('.indicator');
+			indicator.appendTo($(this)).fadeOut('slow', function(){
 				parent.append(templ);
 				$('#input').val('');
 				scrollBottom();
