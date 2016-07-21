@@ -56,9 +56,14 @@ function render() {
 		var who = 'them';
 		var avatar = '/images/avatar.png';
 		$('#content').delay(textDelay).queue(function(n) {
-			var templ = '<div class="message-wrapper ' + who + '"><div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn">' + state.message.body + '</div></div>';
-			$(this).append(templ);
-			$('#input').val('');
+			var templ = $('<div class="message-wrapper ' + who + '"><div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn">' + state.message.body + '</div></div>');
+			var indicator = $('<img class="indicator" src="/images/chatindicator.gif"/>');
+			var parent = $(this);
+			indicator.appendTo($(this)).delay(getRandomInt(500,1000)).fadeOut('slow', function(){
+				parent.append(templ);
+				$('#input').val('');
+				scrollBottom();
+			});
 			scrollBottom();
 			n();
 		});
@@ -226,4 +231,8 @@ function scrollBottom() {
   	queue: true,
     duration: 'ease'
   });
+}
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
