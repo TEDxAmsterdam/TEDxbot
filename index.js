@@ -148,22 +148,41 @@ function startRegistrationConversation(bot, message) {
 
     bot.startConversation(message, function(err, convo) {
         convo.sayFirst('What a lovely day!');
-        convo.ask('Would you like to register? ', [{
-						pattern: bot.utterances.yes,
-						callback: function(response, convo) {
-								convo.say('Great! I will continue...');
-								convo.next();
-								inputName(response, convo, configAccount, bot);
-						}
-				}, {
-						pattern: bot.utterances.no,
-						callback: function(response, convo) {
-								convo.say('Perhaps you would like to login?');
-								convo.next();
-								inputEmailLogin(convo, configAccount);
-						}
-				}]);
+        var msg = {
+            attachment: {
+            	type: "decision",
+              payload: {
+                text: 'Would you like to register?',
+                yes: 'Yes',
+      					no: 'No'
+              }
+            }
+        };
+        decide(convo, JSON.stringify(msg), function(r,c){
+            c.say('Great! I will continue...');
+            c.next();
+          	inputName(r, c, configAccount, bot);
+        },
+        function(r,c) {
+          c.say('Perhaps you would like to login?');
+          c.next();
+          inputEmailLogin(convo, configAccount);
+        });
     });
+}
+
+function decide(convo, question, yesCb, noCb) {
+  convo.ask(question, [{
+      pattern: bot.utterances.yes,
+      callback: function(response, convo) {
+          yesCb(response, convo);
+      }
+  }, {
+      pattern: bot.utterances.no,
+      callback: function(response, convo) {
+          noCb(response, convo);
+      }
+  }]);
 }
 
 function inputName(response, convo, account, bot) {
@@ -240,23 +259,29 @@ function inputOrg(convo, account) {
 }
 
 function inputGender(convo, account) {
-	convo.ask('Are you male? just asking...', [{
-			pattern: bot.utterances.yes,
-			callback: function(response, convo) {
-					account().customData.gender = 'male';
-					convo.say('Hello Sir! Great! I will continue...');
-					convo.next();
-					inputEmailRegistration(convo, account);
-			}
-	}, {
-			pattern: bot.utterances.no,
-			callback: function(response, convo) {
-					account().customData.gender = 'female';
-					convo.say('Hello Madam! Great! I will continue...');
-					convo.next();
-					inputEmailRegistration(convo, account);
-			}
-	}]);
+  decision(convo,
+    JSON.stringify({
+      attachment: {
+        type: "decision",
+        payload: {
+          text: 'Are you male?',
+          yes: 'Yes',
+          no: 'No'
+        }
+      }
+    }),
+  function(r,c) {
+    account().customData.gender = 'male';
+    c.say('Hello Sir! Great! I will continue...');
+    c.next();
+    inputEmailRegistration(c, account);
+  },
+  function(r,c) {
+    account().customData.gender = 'female';
+    c.say('Hello Madam! Great! I will continue...');
+    c.next();
+    inputEmailRegistration(c, account);
+  });
 }
 
 // choice: (linkedin), email address (exchange for linkedin if choice is email addr)

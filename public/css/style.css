@@ -248,6 +248,11 @@ body {
   right: -9px;
 }
 
+.indicator {
+  padding-top:5px;
+  padding-bottom:5px;
+}
+
 @media (max-width: 560px) {
   .wrapper {
     width: 100%;

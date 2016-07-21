@@ -1,5 +1,5 @@
 var SOCKET_SERVER_URL = 'http://tedxchatbot.herokuapp.com';
-
+//SOCKET_SERVER_URL = 'http://localhost';
 function messageReducer(state, action) {
   if (typeof state === 'undefined') {
     return {body: null};
@@ -29,11 +29,15 @@ function attachmentReducer(state, action) {
   }
 	switch(action.type) {
 		case 'ATTACHMENT_RECEIVED':
-			if('login' == action.attachment.type) {
+			var t = action.attachment.type;
+			if('login' == t) {
 				return {login: action.attachment.payload};
 			}
-			else if('image' == action.attachment.type){
+			else if('image' == t){
 				return {image: null};
+			}
+			else if('decision' == t) {
+				return {decision: action.attachment.payload};
 			}
 		default:
 			return {};
@@ -53,20 +57,16 @@ function render() {
 
 	// Print message from bot.
 	if(state.message.body) {
-		var who = 'them';
 		var avatar = '/images/avatar.png';
 		$('#content').delay(textDelay).queue(function(n) {
-			var templ = $('<div class="message-wrapper ' + who + '"><div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn">' + state.message.body + '</div></div>');
-			var indicator = $('<img class="indicator" src="/images/chatindicator.gif"/>');
-			var parent = $(this);
-			$(this).remove('.indicator');
-			indicator.appendTo($(this)).fadeOut('slow', function(){
-				parent.append(templ);
-				$('#input').val('');
-				scrollBottom();
-			});
-			scrollBottom();
-			n();
+			var indicator = $('<div class="message-wrapper them"> <div class="circle-wrapper animated bounceIn" style="background-image:url('+avatar+'); background-size: 50px 50px;background-position:-5px -5px"></div><div class="text-wrapper animated fadeIn"><img class="indicator" src="/images/chatindicator-white.gif"/></div></div>');
+      var parent = $(this);
+      indicator.appendTo(parent).delay(1000).fadeIn('slow', function(){
+          indicator.find('.text-wrapper').html(state.message.body);
+          $('#input').val('');
+          scrollBottom();
+          n();
+      });
 		});
 	}
 
@@ -81,6 +81,13 @@ function render() {
 			console.log(err);
 			store.dispatch(messageReceivedAction('Your password appears to be incorrect'));
 		});
+	}
+
+	// Decision.
+	if(state.attachment.decision) {
+		store.dispatch(messageReceivedAction(state.attachment.decision.text));
+		$('#chat-input').hide();
+		$('#decide').delay(1000).show();
 	}
 }
 
@@ -158,6 +165,9 @@ function sendChat(message, me) {
 	if (!message) {
 		printChat(data.text);
 	}
+	$('#chat-input').show();
+	$('#decide').hide();
+  $('#chat-input .input').focus();
 }
 
 $.fn.enterKey = function(fnc) {
@@ -197,6 +207,14 @@ $(function() {
 
 	$('#login').on('click', function() {
 		login();
+	});
+
+	$('#btn-yes').on('click', function(){
+		sendChat('yes', true);
+	});
+
+	$('#btn-no').on('click', function(){
+		sendChat('no', true);
 	});
 });
 

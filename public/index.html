@@ -10,7 +10,6 @@
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/oauth-io/0.5.2/oauth.js"></script>
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.5.2/redux.min.js"></script>
 	<script type="text/javascript" src="https://cdn.rawgit.com/visionmedia/page.js/master/page.js"></script>
-
 	<link href="/css/animate.css" rel="stylesheet">
 	<link href="/css/style.css" rel="stylesheet">
 
@@ -43,8 +42,14 @@
 					</div>
 				</div>
 				<div id="bottom" class="bottom">
-					<textarea id="input" class="input"></textarea>
-					<div id="send" class="send"></div>
+					<div id="chat-input">
+						<textarea id="input" class="input"></textarea>
+						<div id="send" class="send"></div>
+					</div>
+					<div style="display:none;" id="decide" class="text-center">
+						<button id="btn-yes" type="button" class="btn btn-lg btn-success btn-yes">Yes</button>
+						<button id="btn-no" type="button" class="btn btn-lg btn-danger btn-no">No</button>
+					</div>
 				</div>
 			</div>
 		</div>
