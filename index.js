@@ -161,7 +161,7 @@ function startRegistrationConversation(bot, message) {
         decide(convo, JSON.stringify(msg), function(r,c){
             c.say('Great! I will continue...');
             c.next();
-            inputName(convo, configAccount);
+            inputEmailRegistration(convo, configAccount);
         },
         function(r,c) {
           c.say('Perhaps you would like to login?');
@@ -192,13 +192,12 @@ function inputName(convo, account) {
           inputName(convo, account);
         } else {
           account().givenName = capitalizeFirstLetter(response.text);
-          convo.say('I am here to serve you, Master ' + account().givenName + ' !');
+          convo.say('Pleased to meet you, ' + account().givenName + ' !');
           convo.next();
-          convo.ask('Master ' + account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
+          convo.ask(account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
               account().surname = capitalizeFirstLetter(response.text);
-              convo.say(account().givenName + ' ' + account().surname + ', Master, what a beautiful name, splendid! I have stored your full name in my memory banks..');
-              convo.next();
-              inputEmailRegistration(convo, account);
+              convo.say(account().givenName + ' ' + account().surname + ', What a beautiful name, splendid! ');
+              createAccount(convo, account);
           });
         }
 
@@ -305,7 +304,7 @@ function inputEmailRegistration(convo, account) {
     convo.ask('Please enter your email address', function(response, convo) {
         account().email = extractEmail(response.text.toLowerCase());
         convo.say('Thanks you entered: ' + account().email);
-				convo.say('I will check if this account is already present in our database now..')
+				convo.say('I will check if this account is already present..')
 				validateAccount(convo, account, false);
     });
 }
@@ -344,7 +343,7 @@ function validateAccount(convo, account, inLoginFlow) {
           attachment: {
             type: "decision",
             payload: {
-              text: 'I have located your account in my memory banks. Would you like to login?',
+              text: 'I have located your account. Would you like to login?',
               yes: 'Yes login',
               no: 'Re-enter email'
             }
@@ -368,16 +367,15 @@ function validateAccount(convo, account, inLoginFlow) {
           attachment: {
             type: "decision",
             payload: {
-              text: 'Master ' + account().givenName + ', did you enter the correct email address?',
+              text: account().givenName + ', did you enter the correct email address?',
               yes: 'Yes',
               no: 'No'
             }
           }
       }),
       function(r,c) {
-        account().username = account().email;
-        account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
-        createAccount(c, account);
+        c.next();
+        inputName(c, account);
       },
       function(r,c) {
         c.say('Ok let\'s go through it again...sigh..	;)');
@@ -394,27 +392,28 @@ function validateAccount(convo, account, inLoginFlow) {
 }
 
 function createAccount(convo, account) {
+
+    account().username = account().email;
+    account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
+
     application.createAccount(account(), function(err, createdAccount) {
         if (err) {
             console.log(err);
             convo.say('Something went wrong during registration..');
             convo.next();
-
             // 2001: account exists.
             if (err.userMessage) {
                 convo.say(err.userMessage);
                 convo.next();
-
                 switch (err.code) {
                     case 2001:
                         inputEmailRegistration(convo, account);
                         break;
                 }
             }
-
         } else {
             console.log(createdAccount);
-            convo.say('Splendid! You have been registered!');
+            convo.say('Splendid! You have been registered! Welcome!');
             convo.next();
 						sendLogin(convo, account);
 						sendMail(account().email, 'Your login credentials', account().username + ' ' + account().password);
