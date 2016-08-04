@@ -70,7 +70,7 @@ controller.hears(['attachment'], hearingConditions, function (bot, message) {
         attachments: attachments
     }, function (err, resp) {
         console.log(err, resp)
-});
+    });
 });
 
 controller.hears(['register', 'signup', 'create account', 'sign up'], hearingConditions, function (bot, message) {
@@ -125,25 +125,25 @@ Attended in
 // Onboarding flow.
 function startRegistrationConversation(bot, message) {
     var account = {
-        givenName: '', 	// *
-        surname: '', 		// *
-        username: '',	 	// * - email
-        email: '',  		// *
-        password: '', 	// * - generated
+        givenName: '', 	            // *
+        surname: '', 		        // *
+        username: '',	 	        // * - email
+        email: '',  		        // *
+        password: '', 	            // * - generated
         customData: {
             gender: 'male|female',
-            organization: '', // ** reg flow
-            function: 'function', // ** reg flow
+            organization: '',       // ** reg flow
+            function: 'function',   // ** reg flow
             language: '',
             birthdate: '',
             address: '',
             zipcode: '',
-            city: '', 			// *
+            city: '',
             country: '',
             phone: '',
-            tags: '', // ** reg flow
-            reason2016: '', // ** reg flow
-            event2016: '' // ** reg flow
+            tags: '',               // ** reg flow
+            reason2016: '',         // ** reg flow
+            event2016: ''           // ** reg flow
         }
     };
 
