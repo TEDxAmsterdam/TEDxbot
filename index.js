@@ -81,7 +81,7 @@ controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_m
 	}
 });
 
-controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], ['direct_message', 'direct_mention'], function(bot, message) {
+controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi', 'hey', 'aloha', 'whats up', 'oi', 'ey', 'yo'], ['direct_message', 'direct_mention'], function(bot, message) {
 		if(message.data && message.data.data.email) {
       console.log('MESSAGE', message);
 			bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
