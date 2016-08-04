@@ -13,7 +13,11 @@ var request = require('request');
 var MapboxClient = require('mapbox');
 var sgHelper = require('sendgrid').mail;
 var sg = require('sendgrid').SendGrid(config.sendgrid.key);
-
+var fmtStr = require('formatted-string');
+var genders = {
+    male: 'male',
+    female: 'female'
+};
 var apiKey = {
     id: config.stormpath.id,
     secret: config.stormpath.secret
@@ -264,6 +268,7 @@ function inputOrg(convo, account) {
 }
 
 function inputGender(convo, account) {
+  var greeting = 'Hello {title}! Great! I will continue...';
   decide(convo,
     JSON.stringify({
       attachment: {
@@ -276,13 +281,13 @@ function inputGender(convo, account) {
       }
     }),
   function(r,c) {
-    account().customData.gender = 'male';
-    c.say('Hello Sir! Great! I will continue...');
+    account().customData.gender = genders.male;
+    c.say(fmtStr.formatted(greeting, {title: 'Sir'}));
     c.next();
   },
   function(r,c) {
-    account().customData.gender = 'female';
-    c.say('Hello Madam! Great! I will continue...');
+    account().customData.gender = genders.female;
+    c.say(fmtStr.formatted(greeting, {title: 'Madam'}));
     c.next();
   });
 }
