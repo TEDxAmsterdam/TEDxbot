@@ -18,6 +18,7 @@ var genders = {
     male: 'male',
     female: 'female'
 };
+var hearingConditions = ['direct_message', 'direct_mention'];
 var apiKey = {
     id: config.stormpath.id,
     secret: config.stormpath.secret
@@ -46,15 +47,15 @@ controller.setupWebserver(config.port, bot, function (err, webserver) {
     console.log('started ws');
 });
 
-controller.hears('help', ['direct_message', 'direct_mention'], function (bot, message) {
+controller.hears('help', hearingConditions, function (bot, message) {
     var help = 'I will respond to the following messages: \n' +
         '`say Hi ` to start a conversation with me.\n' +
         '`say help` to see this again.'
-    bot.reply(message, help)
+    bot.reply(message, help);
 });
 
-controller.hears(['attachment'], ['direct_message', 'direct_mention'], function (bot, message) {
-    var text = 'This is a test for an attachment'
+controller.hears(['attachment'], hearingConditions, function (bot, message) {
+    var text = 'This is a test for an attachment';
     var attachments = [{
         fallback: text,
         pretext: 'We bring bots to life. :sunglasses: :thumbsup:',
@@ -63,16 +64,16 @@ controller.hears(['attachment'], ['direct_message', 'direct_mention'], function 
         title_link: 'http://dev.tedx.amsterdam',
         text: text,
         color: '#7CD197'
-    }]
+    }];
 
     bot.reply(message, {
         attachments: attachments
     }, function (err, resp) {
         console.log(err, resp)
-    })
+});
 });
 
-controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_message', 'direct_mention'], function (bot, message) {
+controller.hears(['register', 'signup', 'create account', 'sign up'], hearingConditions, function (bot, message) {
     if (message.data && message.data.data.email) {
         bot.reply(message, 'I\'m sorry, ' + message.data.data.firstname + ' I\'m afraid I can\'t do that.');
     }
@@ -81,7 +82,7 @@ controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_m
     }
 });
 
-controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], ['direct_message', 'direct_mention'], function (bot, message) {
+controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], hearingConditions, function (bot, message) {
     if (message.data && message.data.data.email) {
         console.log('MESSAGE', message);
         bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
