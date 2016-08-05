@@ -21,46 +21,46 @@ function WebSocketBot(configuration) {
     var ws_botkit = Botkit(configuration || {});
     var bot = {};
 
-    ws_botkit.defineBot(function(botkit, config) {
+    ws_botkit.defineBot(function (botkit, config) {
         var bot = {
             botkit: botkit,
             config: config || {},
             utterances: botkit.utterances,
         };
 
-        bot.startConversation = function(message, cb) {
+        bot.startConversation = function (message, cb) {
             botkit.startConversation(this, message, cb);
         };
 
-        bot.send = function(message, cb) {
-						if(message.channel) {
-							botkit.debug('bot.send: ', message);
+        bot.send = function (message, cb) {
+            if (message.channel) {
+                botkit.debug('bot.send: ', message);
 
-							var activeSocket = {};
-							for(var i=0;i<activeSockets.length;i++) {
-								botkit.debug(activeSockets[i].id);
-								if(activeSockets[i].id.indexOf(message.channel) > -1){
-									activeSocket = activeSockets[i];
-								}
-							}
-							if(activeSocket.id) {
-		            activeSocket.emit('message', {
-		                user: 'tedxbot',
-		                channel: message.channel,
-		                text: message.text
-		            });
-							} else {
-								botkit.debug('No active socket found');
-							}
-						} else {
-							botkit.debug('bot.send: No channel id found');
-						}
+                var activeSocket = {};
+                for (var i = 0; i < activeSockets.length; i++) {
+                    botkit.debug(activeSockets[i].id);
+                    if (activeSockets[i].id.indexOf(message.channel) > -1) {
+                        activeSocket = activeSockets[i];
+                    }
+                }
+                if (activeSocket.id) {
+                    activeSocket.emit('message', {
+                        user: 'tedxbot',
+                        channel: message.channel,
+                        text: message.text
+                    });
+                } else {
+                    botkit.debug('No active socket found');
+                }
+            } else {
+                botkit.debug('bot.send: No channel id found');
+            }
         };
 
-        bot.reply = function(src, resp, cb) {
+        bot.reply = function (src, resp, cb) {
             var msg = {};
 
-            if (typeof(resp) == 'string') {
+            if (typeof (resp) == 'string') {
                 msg.text = resp;
             } else {
                 msg = resp;
@@ -72,7 +72,7 @@ function WebSocketBot(configuration) {
             bot.say(msg, cb);
         };
 
-        bot.findConversation = function(message, cb) {
+        bot.findConversation = function (message, cb) {
             botkit.debug('CUSTOM FIND CONVO', message.user, message.channel);
             for (var t = 0; t < botkit.tasks.length; t++) {
                 for (var c = 0; c < botkit.tasks[t].convos.length; c++) {
@@ -94,51 +94,51 @@ function WebSocketBot(configuration) {
         return bot;
     });
 
-    ws_botkit.on('tick', function() {
-      //  console.log('hello, my circuits are fine..');
+    ws_botkit.on('tick', function () {
+        //  console.log('hello, my circuits are fine..');
     });
 
-    ws_botkit.setupWebserver = function(port, bot, cb) {
+    ws_botkit.setupWebserver = function (port, bot, cb) {
         app.use(session);
         io.use(sharedsession(session));
 
-				app.use(express.static(path.join(__dirname, 'public')));
+        app.use(express.static(path.join(__dirname, 'public')));
 
-        app.get('/', function(req, res) {
+        app.get('/', function (req, res) {
             res.send('<h1>Hello world</h1>');
         });
 
         server.listen(port ? port : 80);
-        io.on('connection', function(socket, err) {
+        io.on('connection', function (socket, err) {
 
-						var socketId = socket.id;
-  					var clientIp = socket.request.connection.remoteAddress;
+            var socketId = socket.id;
+            var clientIp = socket.request.connection.remoteAddress;
 
-						console.log('Connection established', socketId, clientIp);
+            console.log('Connection established', socketId, clientIp);
 
-            socket.on('message', function(message) {
+            socket.on('message', function (message) {
                 console.log(message);
                 ws_botkit.trigger('direct_message', [bot, message]);
                 ws_botkit.receiveMessage(bot, message);
             });
 
-						activeSockets.push(socket);
+            activeSockets.push(socket);
 
-						socket.on('disconnect', function() {
-				      console.log('Got disconnect!', socket.id);
-				      var i = activeSockets.indexOf(socket);
-				      activeSockets.splice(i, 1);
-							for(var i=0;i<activeSockets.length;i++) {
-								console.log('Active connection:', activeSockets[i].id);
-							}
-				   });
+            socket.on('disconnect', function () {
+                console.log('Got disconnect!', socket.id);
+                var i = activeSockets.indexOf(socket);
+                activeSockets.splice(i, 1);
+                for (var i = 0; i < activeSockets.length; i++) {
+                    console.log('Active connection:', activeSockets[i].id);
+                }
+            });
         });
         ws_botkit.config.port = port;
         return ws_botkit;
     };
 
-    ws_botkit.createWebhookEndpoints = function(webserver, bot, cb) {
-        console.log('testing..');
+    ws_botkit.createWebhookEndpoints = function (webserver, bot, cb) {
+        console.log('testing...');
     };
 
     ws_botkit.startTicking();
