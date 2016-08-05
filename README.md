@@ -7,7 +7,7 @@ The TEDxBot is the first part of the new TEDxAmsterdam website experience. Throu
 The current bot is available for testing at http://tedxchatbot.herokuapp.com/. Please feel free to test it out and submit any issues or pull requests to help improve the bot. 
 
 # How to contribute
-There is a Slack available for discussion, please register at [TEDxDev](dev.tedx.asterdam) to receive an invite. Developers, designers and strategists collaborate for this project. Otherwise the issue and pull request features of GitHub are the way to go. 
+There is a Slack available for discussion, please register at http://dev.tedx.asterdam/ to receive an invite. Developers, designers and strategists collaborate for this project. Otherwise the issue and pull request features of GitHub are the way to go. 
 
 # To-do
 
