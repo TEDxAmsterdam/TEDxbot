@@ -18,6 +18,7 @@ var genders = {
     male: 'male',
     female: 'female'
 };
+var hearingConditions = ['direct_message', 'direct_mention'];
 var apiKey = {
     id: config.stormpath.id,
     secret: config.stormpath.secret
@@ -35,60 +36,60 @@ var client = new stormpath.Client({
 
 var application = null;
 
-client.getApplication('https://api.stormpath.com/v1/applications/' + appId, function(err, resource) {
+client.getApplication('https://api.stormpath.com/v1/applications/' + appId, function (err, resource) {
     if (err) console.log('Could not retrieve stormpath application', appId);
     application = resource;
 });
 
 var bot = controller.spawn({});
 
-controller.setupWebserver(config.port, bot, function(err, webserver) {
+controller.setupWebserver(config.port, bot, function (err, webserver) {
     console.log('started ws');
 });
 
-controller.hears('help', ['direct_message', 'direct_mention'], function (bot, message) {
-  var help = 'I will respond to the following messages: \n' +
-      '`say Hi ` to start a conversation with me.\n' +
-      '`say help` to see this again.'
-  bot.reply(message, help)
+controller.hears('help', hearingConditions, function (bot, message) {
+    var help = 'I will respond to the following messages: \n' +
+        '`say Hi ` to start a conversation with me.\n' +
+        '`say help` to see this again.'
+    bot.reply(message, help);
 });
 
-controller.hears(['attachment'], ['direct_message', 'direct_mention'], function (bot, message) {
-  var text = 'This is a test for an attachment'
-  var attachments = [{
-    fallback: text,
-    pretext: 'We bring bots to life. :sunglasses: :thumbsup:',
-    title: 'Whoop whoop',
-    image_url: 'https://storage.googleapis.com/beepboophq/_assets/bot-1.22f6fb.png',
-    title_link: 'http://dev.tedx.amsterdam',
-    text: text,
-    color: '#7CD197'
-  }]
+controller.hears(['attachment'], hearingConditions, function (bot, message) {
+    var text = 'This is a test for an attachment';
+    var attachments = [{
+        fallback: text,
+        pretext: 'We bring bots to life. :sunglasses: :thumbsup:',
+        title: 'Whoop whoop',
+        image_url: 'https://storage.googleapis.com/beepboophq/_assets/bot-1.22f6fb.png',
+        title_link: 'http://dev.tedx.amsterdam',
+        text: text,
+        color: '#7CD197'
+    }];
 
-  bot.reply(message, {
-    attachments: attachments
-  }, function (err, resp) {
-    console.log(err, resp)
-  })
+    bot.reply(message, {
+        attachments: attachments
+    }, function (err, resp) {
+        console.log(err, resp)
+    });
 });
 
-controller.hears(['register', 'signup', 'create account', 'sign up'], ['direct_message', 'direct_mention'], function(bot, message) {
-	if(message.data && message.data.data.email) {
-		bot.reply(message, 'I\'m sorry, ' + message.data.data.firstname + ' I\'m afraid I can\'t do that.');
-	}
-	else {
-		startRegistrationConversation(bot, message);
-	}
-});
-
-controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], ['direct_message', 'direct_mention'], function(bot, message) {
-		if(message.data && message.data.data.email) {
-      console.log('MESSAGE', message);
-			bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
-		}
+controller.hears(['register', 'signup', 'create account', 'sign up'], hearingConditions, function (bot, message) {
+    if (message.data && message.data.data.email) {
+        bot.reply(message, 'I\'m sorry, ' + message.data.data.firstname + ' I\'m afraid I can\'t do that.');
+    }
     else {
-			startRegistrationConversation(bot, message);
-		}
+        startRegistrationConversation(bot, message);
+    }
+});
+
+controller.hears(['hi', 'hello', 'howdy', 'hallo', 'hoi'], hearingConditions, function (bot, message) {
+    if (message.data && message.data.data.email) {
+        console.log('MESSAGE', message);
+        bot.reply(message, 'Glad to have you here, ' + message.data.data.firstname);
+    }
+    else {
+        startRegistrationConversation(bot, message);
+    }
 });
 
 /**
@@ -124,172 +125,172 @@ Attended in
 // Onboarding flow.
 function startRegistrationConversation(bot, message) {
     var account = {
-        givenName: '', 	// *
-        surname: '', 		// *
-        username: '',	 	// * - email
-        email: '',  		// *
-        password: '', 	// * - generated
-				customData: {
-					gender: 'male|female',
-					organization: '', // ** reg flow
-					function: 'function', // ** reg flow
-					language: '',
-					birthdate: '',
-					address: '',
-					zipcode: '',
-					city: '', 			// *
-					country: '',
-					phone: '',
-					tags:'', // ** reg flow
-					reason2016: '', // ** reg flow
-					event2016: '' // ** reg flow
-				}
+        givenName: '', 	            // *
+        surname: '', 		        // *
+        username: '',	 	        // * - email
+        email: '',  		        // *
+        password: '', 	            // * - generated
+        customData: {
+            gender: 'male|female',
+            organization: '',       // ** reg flow
+            function: 'function',   // ** reg flow
+            language: '',
+            birthdate: '',
+            address: '',
+            zipcode: '',
+            city: '',
+            country: '',
+            phone: '',
+            tags: '',               // ** reg flow
+            reason2016: '',         // ** reg flow
+            event2016: ''           // ** reg flow
+        }
     };
 
     function configAccount() {
         return account;
     }
 
-    bot.startConversation(message, function(err, convo) {
+    bot.startConversation(message, function (err, convo) {
         convo.sayFirst('What a lovely day!');
         var msg = {
             attachment: {
-            	type: "decision",
-              payload: {
-                text: 'Would you like to register?',
-                yes: 'Yes',
-      					no: 'No'
-              }
+                type: "decision",
+                payload: {
+                    text: 'Would you like to register?',
+                    yes: 'Yes',
+                    no: 'No'
+                }
             }
         };
-        decide(convo, JSON.stringify(msg), function(r,c){
+        decide(convo, JSON.stringify(msg), function (r, c) {
             c.say('Great! I will continue...');
             c.next();
             inputEmailRegistration(convo, configAccount);
         },
-        function(r,c) {
-          c.say('Perhaps you would like to login?');
-          c.next();
-          inputEmailLogin(c, configAccount);
-        });
+            function (r, c) {
+                c.say('Perhaps you would like to login?');
+                c.next();
+                inputEmailLogin(c, configAccount);
+            });
     });
 }
 
 function decide(convo, question, yesCb, noCb) {
-  convo.ask(question, [{
-      pattern: bot.utterances.yes,
-      callback: function(response, convo) {
-          yesCb(response, convo);
-      }
-  }, {
-      pattern: bot.utterances.no,
-      callback: function(response, convo) {
-          noCb(response, convo);
-      }
-  }]);
+    convo.ask(question, [{
+        pattern: bot.utterances.yes,
+        callback: function (response, convo) {
+            yesCb(response, convo);
+        }
+    }, {
+            pattern: bot.utterances.no,
+            callback: function (response, convo) {
+                noCb(response, convo);
+            }
+        }]);
 }
 
 function inputName(convo, account) {
-    convo.ask('I\'m delighted to make your acquaintance, may I ask what is your first name?', function(response, convo) {
-        if(!response.text) {
-          convo.next();
-          inputName(convo, account);
+    convo.ask('I\'m delighted to make your acquaintance, may I ask what is your first name?', function (response, convo) {
+        if (!response.text) {
+            convo.next();
+            inputName(convo, account);
         } else {
-          account().givenName = capitalizeFirstLetter(response.text);
-          convo.say('Pleased to meet you, ' + account().givenName + ' !');
-          convo.next();
-          convo.ask(account().givenName + ', if you don\'t mind me asking; what is your last name? ', function(response, convo) {
-              account().surname = capitalizeFirstLetter(response.text);
-              convo.say(account().givenName + ' ' + account().surname + ', What a beautiful name, splendid! ');
-              createAccount(convo, account);
-          });
+            account().givenName = capitalizeFirstLetter(response.text);
+            convo.say('Pleased to meet you, ' + account().givenName + ' !');
+            convo.next();
+            convo.ask(account().givenName + ', if you don\'t mind me asking; what is your last name? ', function (response, convo) {
+                account().surname = capitalizeFirstLetter(response.text);
+                convo.say(account().givenName + ' ' + account().surname + ', What a beautiful name, splendid! ');
+                createAccount(convo, account);
+            });
         }
 
     });
 }
 
 function inputLocation(convo, account) {
-  convo.ask('What is your city of residence?', function(response, convo) {
-			account().customData.city = capitalizeFirstLetter(response.text);
-			var client = new MapboxClient('pk.eyJ1IjoidGVkeGFtc3RlcmRhbSIsImEiOiJjaXEzbzAzZHAwMDZ1aTJuZGw2bXJtNW45In0.YDB2RiF_pHlry694BJcQaw');
-			client.geocodeForward(account().customData.city, function(err, res) {
-					//console.log(err, res);
-					if(err) {
-						convo.say('Wow, this city is not listed in my database; it must be lovely there for sure!');
-						convo.next();
-						convo.ask('In which country do you reside?)', function(response, convo) {
-				        account().customData.country = response.text.toLowerCase()
-								convo.say(account().customData.country + ' sounds like a cool place to be');
-								convo.next();
-				    });
-					} else {
-						if(res.features.length == 0) {
-							convo.next();
-							inputLocation(convo, account);
-						}
-						else {
-							if(!res.features[0].context) {
-								convo.next();
-								inputLocation(convo, account);
-							}
-							else {
-								var tempCountry = res.features[0].context[parseInt(res.features[0].context.length - 1)].text;
-								console.log(res.features[0].context, res.features[0].context.length, tempCountry);
-								account().customData.country = tempCountry;
-								var reply = 'I love ' + account().customData.city + ' in ';
-								if(account().customData.country.endsWith('s')
-									|| account().customData.country.toLowerCase().indexOf('united') > -1
-									|| account().customData.country.toLowerCase().indexOf('union') > -1
-									|| account().customData.country.toLowerCase().indexOf('republic') > -1) {
-									reply += 'the ' + account().customData.country;
-								} else {
-									reply += account().customData.country;
-								}
-						  	convo.say(reply);
-								convo.next();
-								inputOrg(convo, account);
-							}
-						}
-					}
-			});
-	});
+    convo.ask('What is your city of residence?', function (response, convo) {
+        account().customData.city = capitalizeFirstLetter(response.text);
+        var client = new MapboxClient('pk.eyJ1IjoidGVkeGFtc3RlcmRhbSIsImEiOiJjaXEzbzAzZHAwMDZ1aTJuZGw2bXJtNW45In0.YDB2RiF_pHlry694BJcQaw');
+        client.geocodeForward(account().customData.city, function (err, res) {
+            //console.log(err, res);
+            if (err) {
+                convo.say('Wow, this city is not listed in my database; it must be lovely there for sure!');
+                convo.next();
+                convo.ask('In which country do you reside?)', function (response, convo) {
+                    account().customData.country = response.text.toLowerCase()
+                    convo.say(account().customData.country + ' sounds like a cool place to be');
+                    convo.next();
+                });
+            } else {
+                if (res.features.length == 0) {
+                    convo.next();
+                    inputLocation(convo, account);
+                }
+                else {
+                    if (!res.features[0].context) {
+                        convo.next();
+                        inputLocation(convo, account);
+                    }
+                    else {
+                        var tempCountry = res.features[0].context[parseInt(res.features[0].context.length - 1)].text;
+                        console.log(res.features[0].context, res.features[0].context.length, tempCountry);
+                        account().customData.country = tempCountry;
+                        var reply = 'I love ' + account().customData.city + ' in ';
+                        if (account().customData.country.endsWith('s')
+                            || account().customData.country.toLowerCase().indexOf('united') > -1
+                            || account().customData.country.toLowerCase().indexOf('union') > -1
+                            || account().customData.country.toLowerCase().indexOf('republic') > -1) {
+                            reply += 'the ' + account().customData.country;
+                        } else {
+                            reply += account().customData.country;
+                        }
+                        convo.say(reply);
+                        convo.next();
+                        inputOrg(convo, account);
+                    }
+                }
+            }
+        });
+    });
 }
 
 function inputOrg(convo, account) {
-	convo.ask('What is the name of your organization?', function(response, convo) {
+    convo.ask('What is the name of your organization?', function (response, convo) {
         account().customData.organization = response.text;
-				convo.next();
-				convo.ask('What is your function within the '+account().customData.organization+' organization?', function(response, convo) {
-				  account().customData.function = capitalizeFirstLetter(response.text);
-					convo.next();
-					inputGender(convo, account);
-				});
-  });
+        convo.next();
+        convo.ask('What is your function within the ' + account().customData.organization + ' organization?', function (response, convo) {
+            account().customData.function = capitalizeFirstLetter(response.text);
+            convo.next();
+            inputGender(convo, account);
+        });
+    });
 }
 
 function inputGender(convo, account) {
-  var greeting = 'Hello {title}! Great! I will continue...';
-  decide(convo,
-    JSON.stringify({
-      attachment: {
-        type: "decision",
-        payload: {
-          text: 'Are you male?',
-          yes: 'Yes',
-          no: 'No'
-        }
-      }
-    }),
-  function(r,c) {
-    account().customData.gender = genders.male;
-    c.say(fmtStr.formatted(greeting, {title: 'Sir'}));
-    c.next();
-  },
-  function(r,c) {
-    account().customData.gender = genders.female;
-    c.say(fmtStr.formatted(greeting, {title: 'Madam'}));
-    c.next();
-  });
+    var greeting = 'Hello {title}! Great! I will continue...';
+    decide(convo,
+        JSON.stringify({
+            attachment: {
+                type: "decision",
+                payload: {
+                    text: 'Are you male?',
+                    yes: 'Yes',
+                    no: 'No'
+                }
+            }
+        }),
+        function (r, c) {
+            account().customData.gender = genders.male;
+            c.say(fmtStr.formatted(greeting, { title: 'Sir' }));
+            c.next();
+        },
+        function (r, c) {
+            account().customData.gender = genders.female;
+            c.say(fmtStr.formatted(greeting, { title: 'Madam' }));
+            c.next();
+        });
 }
 
 // choice: (linkedin), email address (exchange for linkedin if choice is email addr)
@@ -306,94 +307,94 @@ function inputGender(convo, account) {
 // unknown account (email) ->
 
 function inputEmailRegistration(convo, account) {
-    convo.ask('Please enter your email address', function(response, convo) {
+    convo.ask('Please enter your email address', function (response, convo) {
         account().email = extractEmail(response.text.toLowerCase());
         convo.say('Thanks you entered: ' + account().email);
-				convo.say('I will check if this account is already present..')
-				validateAccount(convo, account, false);
+        convo.say('I will check if this account is already present..')
+        validateAccount(convo, account, false);
     });
 }
 
 function inputEmailLogin(convo, account) {
-	convo.ask('Please enter your email address', function(response, convo) {
-			account().email = extractEmail(response.text.toLowerCase());
-			validateAccount(convo, account, true);
-	});
+    convo.ask('Please enter your email address', function (response, convo) {
+        account().email = extractEmail(response.text.toLowerCase());
+        validateAccount(convo, account, true);
+    });
 }
 
 function sendLogin(convo, account) {
-	var msg = {
-      attachment: {
-      	type: "login",
-        payload: {
-          username: account().username,
-					password: account().password
+    var msg = {
+        attachment: {
+            type: "login",
+            payload: {
+                username: account().username,
+                password: account().password
+            }
         }
-      }
-  };
-	console.log(msg);
-  convo.say(JSON.stringify(msg));
-	convo.next();
+    };
+    console.log(msg);
+    convo.say(JSON.stringify(msg));
+    convo.next();
 }
 
 function validateAccount(convo, account, inLoginFlow) {
-	application.getAccounts({ email: account().email }, function(err, accounts) {
-		if(err) {
-			convo.say('An error occurred during account validation');
-			convo.next();
-		}
-		if (accounts && parseInt(accounts.size) >= 1) {
-			convo.next();
-      decide(convo, JSON.stringify({
-          attachment: {
-            type: "decision",
-            payload: {
-              text: 'I have located your account. Would you like to login?',
-              yes: 'Yes login',
-              no: 'Re-enter email'
-            }
-          }
-      }), function(r,c) {
-        c.next();
-        c.ask('Please enter your password to login.', function(response, convo) {
-            account().username = account().email;
-  					account().password = response.text;
-  					inputRegisterEvent(c, account);
-  	    });
-      }, function(r,c){
-        c.next();
-        inputEmailRegistration(c, account);
-      });
+    application.getAccounts({ email: account().email }, function (err, accounts) {
+        if (err) {
+            convo.say('An error occurred during account validation');
+            convo.next();
+        }
+        if (accounts && parseInt(accounts.size) >= 1) {
+            convo.next();
+            decide(convo, JSON.stringify({
+                attachment: {
+                    type: "decision",
+                    payload: {
+                        text: 'I have located your account. Would you like to login?',
+                        yes: 'Yes login',
+                        no: 'Re-enter email'
+                    }
+                }
+            }), function (r, c) {
+                c.next();
+                c.ask('Please enter your password to login.', function (response, convo) {
+                    account().username = account().email;
+                    account().password = response.text;
+                    inputRegisterEvent(c, account);
+                });
+            }, function (r, c) {
+                c.next();
+                inputEmailRegistration(c, account);
+            });
 
-    } else {
-			convo.say("It seems that this account does not exist");
-			convo.next();
-      decide(convo, JSON.stringify({
-          attachment: {
-            type: "decision",
-            payload: {
-              text: account().givenName + ', did you enter the correct email address?',
-              yes: 'Yes',
-              no: 'No'
-            }
-          }
-      }),
-      function(r,c) {
-        c.next();
-        inputName(c, account);
-      },
-      function(r,c) {
-        c.say('Ok let\'s go through it again...sigh..	;)');
-        c.next();
-        if(inLoginFlow) {
-          inputEmailLogin(c, account);
+        } else {
+            convo.say("It seems that this account does not exist");
+            convo.next();
+            decide(convo, JSON.stringify({
+                attachment: {
+                    type: "decision",
+                    payload: {
+                        text: account().givenName + ', did you enter the correct email address?',
+                        yes: 'Yes',
+                        no: 'No'
+                    }
+                }
+            }),
+                function (r, c) {
+                    c.next();
+                    inputName(c, account);
+                },
+                function (r, c) {
+                    c.say('Ok let\'s go through it again...sigh..	;)');
+                    c.next();
+                    if (inLoginFlow) {
+                        inputEmailLogin(c, account);
+                    }
+                    else {
+                        inputEmailRegistration(c, account);
+                    }
+                });
         }
-        else {
-          inputEmailRegistration(c, account);
-        }
-      });
-		}
-	});
+    });
 }
 
 function createAccount(convo, account) {
@@ -401,7 +402,7 @@ function createAccount(convo, account) {
     account().username = account().email;
     account().password = makePassword(13, 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890');
 
-    application.createAccount(account(), function(err, createdAccount) {
+    application.createAccount(account(), function (err, createdAccount) {
         if (err) {
             console.log(err);
             convo.say('Something went wrong during registration..');
@@ -420,8 +421,8 @@ function createAccount(convo, account) {
             console.log(createdAccount);
             convo.say('Splendid! You have been registered! Welcome!');
             convo.next();
-						sendLogin(convo, account);
-						sendMail(account().email, 'Your login credentials', account().username + ' ' + account().password);
+            sendLogin(convo, account);
+            sendMail(account().email, 'Your login credentials', account().username + ' ' + account().password);
             convo.next();
             inputRegisterEvent(convo, account);
         }
@@ -429,66 +430,66 @@ function createAccount(convo, account) {
 }
 
 function inputRegisterEvent(convo, account) {
-	login(account().username, account().password, function(acc) {
-		if(!acc) {
-			validateAccount(convo, account, true);
-		} else {
-			console.log('Account info', acc);
-			convo.next();
-      if('yes' == acc.customData.event2016) {
-          convo.say('I see you are already registered for the 2016 TedxAmsterdam event! You said the following:');
-          convo.next();
-          convo.say(acc.customData.reason2016);
-          convo.next();
-          convo.say('That is just awesome! See you soon!')
-          convo.next();
+    login(account().username, account().password, function (acc) {
+        if (!acc) {
+            validateAccount(convo, account, true);
+        } else {
+            console.log('Account info', acc);
+            convo.next();
+            if ('yes' == acc.customData.event2016) {
+                convo.say('I see you are already registered for the 2016 TedxAmsterdam event! You said the following:');
+                convo.next();
+                convo.say(acc.customData.reason2016);
+                convo.next();
+                convo.say('That is just awesome! See you soon!')
+                convo.next();
 
-      }
-      else if(!acc.customData.event2016){
-        decide(convo, JSON.stringify({
-              attachment: {
-                type: "decision",
-                payload: {
-                  text: 'Would you like to register for the event?',
-                  yes: 'Yes',
-                  no: 'No'
-                }
-              }
-          }),function(r,c) {
-            acc.customData.event2016 = 'yes';
-            c.next();
-            c.say('You are going ! :) ');
-            c.next();
-            c.ask('Can you tell me the reason why you want to go?', function(r, c) {
-                acc.customData.reason2016 = r.text;
-                acc.save(function (err, acc) {
-                  if(!err) {
+            }
+            else if (!acc.customData.event2016) {
+                decide(convo, JSON.stringify({
+                    attachment: {
+                        type: "decision",
+                        payload: {
+                            text: 'Would you like to register for the event?',
+                            yes: 'Yes',
+                            no: 'No'
+                        }
+                    }
+                }), function (r, c) {
+                    acc.customData.event2016 = 'yes';
                     c.next();
-                    c.say('Splendid! Thank you for registering for the event and have a great day!');
+                    c.say('You are going ! :) ');
                     c.next();
-                  } else {
-                    c.say('Something went wrong..');
-                    c.next();
-                  }
-                });
-            });
-          },
-          function(r,c) {
-            acc.customData.event2016 = 'no';
-            acc.save(function (err, acc) {
-              if(!err) {
-                c.say('You are not going.. :( Maybe next time?');
-                c.next();
-              } else {
-                c.say('Something went wrong..');
-                c.next();
-              }
-            });
-          });
+                    c.ask('Can you tell me the reason why you want to go?', function (r, c) {
+                        acc.customData.reason2016 = r.text;
+                        acc.save(function (err, acc) {
+                            if (!err) {
+                                c.next();
+                                c.say('Splendid! Thank you for registering for the event and have a great day!');
+                                c.next();
+                            } else {
+                                c.say('Something went wrong..');
+                                c.next();
+                            }
+                        });
+                    });
+                },
+                    function (r, c) {
+                        acc.customData.event2016 = 'no';
+                        acc.save(function (err, acc) {
+                            if (!err) {
+                                c.say('You are not going.. :( Maybe next time?');
+                                c.next();
+                            } else {
+                                c.say('Something went wrong..');
+                                c.next();
+                            }
+                        });
+                    });
 
-      }
-		}
-	});
+            }
+        }
+    });
 }
 
 function inputTags() {
@@ -496,29 +497,29 @@ function inputTags() {
 }
 
 function inputLanguage() {
-	// TODO: implment.
+    // TODO: implment.
 }
 
 function inputBirthdate() {
-	//TODO: implement
+    //TODO: implement
 }
 
 function loginWithLinkedIn() {
-	//TODO: implement
+    //TODO: implement
 }
 
 function login(username, password, cb) {
-	application.authenticateAccount({username: username, password: password}, function (err, authRes) {
-		console.log(err, authRes);
-		if(!err) {
-			authRes.getAccount().expand({customData: true}).exec(function (err, acc) {
-				console.log(err, acc);
-				cb(acc);
-			});
-		} else {
-			cb(false);
-		}
-	});
+    application.authenticateAccount({ username: username, password: password }, function (err, authRes) {
+        console.log(err, authRes);
+        if (!err) {
+            authRes.getAccount().expand({ customData: true }).exec(function (err, acc) {
+                console.log(err, acc);
+                cb(acc);
+            });
+        } else {
+            cb(false);
+        }
+    });
 }
 
 function makePassword(n, a) {
@@ -539,51 +540,51 @@ function capitalizeFirstLetter(string) {
 }
 
 function getConceptsClassification(arr, callback) {
-		var text = arr.join("+");
-		//console.log(text);
-		var api = 'https://alchemy.p.mashape.com/text/TextGetRankedConcepts?linkedData=false&outputMode=json&text=' + text;
-		var options = {
-		  url: api,
-		  headers: {
-		    'X-Mashape-Key': '3wA8TeL1DGmshMHp9kga5a1ffV1pp1Ws8gXjsnH2sCubmBNyxd',
-				'Accept': 'application/json'
-		  }
-		};
-		request(options, function(error, response, body) {
-			if (!error && response.statusCode == 200) {
-				var result = JSON.parse(body);
-				//console.log(result);
-				callback({"concepts": result.concepts, "tags": arr});
-			}
-		});
+    var text = arr.join("+");
+    //console.log(text);
+    var api = 'https://alchemy.p.mashape.com/text/TextGetRankedConcepts?linkedData=false&outputMode=json&text=' + text;
+    var options = {
+        url: api,
+        headers: {
+            'X-Mashape-Key': '3wA8TeL1DGmshMHp9kga5a1ffV1pp1Ws8gXjsnH2sCubmBNyxd',
+            'Accept': 'application/json'
+        }
+    };
+    request(options, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var result = JSON.parse(body);
+            //console.log(result);
+            callback({ "concepts": result.concepts, "tags": arr });
+        }
+    });
 }
 
 function sendMail(toEmail, subject, body) {
-  var from_email = new sgHelper.Email("bot@tedx.amsterdam");
-  var to_email = new sgHelper.Email(toEmail);
-  var content = new sgHelper.Content("text/plain", body);
-  var mail = new sgHelper.Mail(from_email, subject, to_email, content);
+    var from_email = new sgHelper.Email("bot@tedx.amsterdam");
+    var to_email = new sgHelper.Email(toEmail);
+    var content = new sgHelper.Content("text/plain", body);
+    var mail = new sgHelper.Mail(from_email, subject, to_email, content);
 
-  var requestBody = mail.toJSON();
-  var request = sg.emptyRequest();
-  request.method = 'POST';
-  request.path = '/v3/mail/send';
-  request.body = requestBody;
-  sg.API(request, function (response) {
-    console.log(response.statusCode);
-    console.log(response.body);
-    console.log(response.headers);
-  });
+    var requestBody = mail.toJSON();
+    var request = sg.emptyRequest();
+    request.method = 'POST';
+    request.path = '/v3/mail/send';
+    request.body = requestBody;
+    sg.API(request, function (response) {
+        console.log(response.statusCode);
+        console.log(response.body);
+        console.log(response.headers);
+    });
 }
 
 if (!String.prototype.endsWith) {
-  String.prototype.endsWith = function(searchString, position) {
-      var subjectString = this.toString();
-      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-        position = subjectString.length;
-      }
-      position -= searchString.length;
-      var lastIndex = subjectString.indexOf(searchString, position);
-      return lastIndex !== -1 && lastIndex === position;
-  };
+    String.prototype.endsWith = function (searchString, position) {
+        var subjectString = this.toString();
+        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.indexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
 }
