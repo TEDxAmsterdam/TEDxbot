@@ -1,3 +1,6 @@
+# Currently this project is on hold
+Due to time constraints this project is currently on hold. Perhaps in the future we can continue on this, but with TEDxAmsterdam 2016 being held at the 18th of November there is too little time to succesfully finalize this project. Thanks for your interest!
+
 # TEDxBot
 
 # Goal of the Project
